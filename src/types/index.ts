@@ -103,6 +103,24 @@ export interface JobTemplate {
   category: string
 }
 
+export interface PartItem {
+  name: string
+  quantity: number
+  unit: string
+  estimated_unit_cost: number
+  estimated_total: number
+  notes?: string
+}
+
+export interface PartsListData {
+  supplier_name: string
+  supplier_location: string
+  backup_supplier: string
+  items: PartItem[]
+  total_parts_cost: number
+  procurement_notes: string
+}
+
 export interface ClarifyingQuestion {
   id: string
   question: string

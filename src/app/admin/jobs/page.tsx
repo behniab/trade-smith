@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { ChevronLeft, ChevronRight, Loader2, ExternalLink } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, ExternalLink, ChevronDown, ChevronUp, Package } from 'lucide-react'
 import Link from 'next/link'
 import { formatCurrency, JOB_STATUS_COLORS, JOB_STATUS_LABELS } from '@/lib/utils'
 import { CalEvent } from '@/lib/google-calendar'
+import { PartsListData } from '@/types'
 
 const HOURS = Array.from({ length: 11 }, (_, i) => i + 7) // 7am–5pm
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -24,12 +25,13 @@ function fmtTime(iso: string) {
 interface Job {
   id: string
   title: string
+  description: string
   status: string
   urgency: string
   scheduled_date: string | null
   created_at: string
   clients: { name: string; email: string } | null
-  quotes: { estimate: { total: number } }[] | null
+  quotes: { estimate: { total: number }; parts_list: PartsListData | null }[] | null
 }
 
 export default function AdminJobsPage() {
@@ -38,6 +40,7 @@ export default function AdminJobsPage() {
   const [eventsLoading, setEventsLoading] = useState(false)
   const [eventsError, setEventsError] = useState('')
   const [jobs, setJobs] = useState<Job[]>([])
+  const [expandedJob, setExpandedJob] = useState<string | null>(null)
   const setupDone = useRef(false)
 
   // weekStart timestamp used as a stable primitive dependency
@@ -220,27 +223,111 @@ export default function AdminJobsPage() {
           {jobs.length === 0 && (
             <p className="px-6 py-8 text-sm text-gray-400 text-center">No jobs yet.</p>
           )}
-          {jobs.map(job => (
-            <div key={job.id} className="px-6 py-4 flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{job.title}</p>
-                <p className="text-xs text-gray-500">{job.clients?.name} · {new Date(job.created_at).toLocaleDateString()}</p>
-                {job.scheduled_date && (
-                  <p className="text-xs text-blue-600 mt-0.5">
-                    Scheduled: {new Date(job.scheduled_date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                  </p>
+          {jobs.map(job => {
+            const isExpanded = expandedJob === job.id
+            const partsList = job.quotes?.[0]?.parts_list ?? null
+            return (
+              <div key={job.id}>
+                {/* Job row */}
+                <button
+                  type="button"
+                  onClick={() => setExpandedJob(isExpanded ? null : job.id)}
+                  className="w-full px-6 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition text-left"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{job.title}</p>
+                    <p className="text-xs text-gray-500">{job.clients?.name} · {new Date(job.created_at).toLocaleDateString()}</p>
+                    {job.scheduled_date && (
+                      <p className="text-xs text-blue-600 mt-0.5">
+                        Scheduled: {new Date(job.scheduled_date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {partsList && <Package className="w-3.5 h-3.5 text-gray-400" />}
+                    {job.quotes?.[0] && (
+                      <span className="text-sm font-medium text-gray-700">{formatCurrency(job.quotes[0].estimate.total)}</span>
+                    )}
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${JOB_STATUS_COLORS[job.status]}`}>
+                      {JOB_STATUS_LABELS[job.status]}
+                    </span>
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                  </div>
+                </button>
+
+                {/* Expanded job summary */}
+                {isExpanded && (
+                  <div className="border-t bg-gray-50 px-6 py-5 space-y-5">
+                    {/* Description */}
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Job Description</p>
+                      <p className="text-sm text-gray-700">{job.description}</p>
+                    </div>
+
+                    {/* Parts list */}
+                    {partsList ? (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Package className="w-4 h-4 text-blue-600" />
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Parts Order</p>
+                        </div>
+                        <div className="bg-white rounded-lg border overflow-hidden">
+                          {/* Supplier header */}
+                          <div className="px-4 py-3 bg-blue-50 border-b flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-semibold text-blue-900">{partsList.supplier_name}</p>
+                              <p className="text-xs text-blue-700">{partsList.supplier_location}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs text-blue-700">Backup: {partsList.backup_supplier}</p>
+                            </div>
+                          </div>
+                          {/* Parts table */}
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="text-left text-xs text-gray-500 border-b bg-gray-50">
+                                <th className="px-4 py-2 font-medium">Part</th>
+                                <th className="px-4 py-2 font-medium text-right whitespace-nowrap">Qty</th>
+                                <th className="px-4 py-2 font-medium text-right whitespace-nowrap">Unit $</th>
+                                <th className="px-4 py-2 font-medium text-right whitespace-nowrap">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                              {partsList.items.map((item, i) => (
+                                <tr key={i}>
+                                  <td className="px-4 py-2.5">
+                                    <p className="text-gray-800 font-medium">{item.name}</p>
+                                    {item.notes && <p className="text-xs text-gray-400 mt-0.5">{item.notes}</p>}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-right text-gray-600 whitespace-nowrap">{item.quantity} {item.unit}</td>
+                                  <td className="px-4 py-2.5 text-right text-gray-600 whitespace-nowrap">{formatCurrency(item.estimated_unit_cost)}</td>
+                                  <td className="px-4 py-2.5 text-right font-medium text-gray-900 whitespace-nowrap">{formatCurrency(item.estimated_total)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr className="border-t bg-gray-50">
+                                <td colSpan={3} className="px-4 py-2.5 text-sm font-semibold text-gray-700 text-right">Estimated Parts Total</td>
+                                <td className="px-4 py-2.5 text-right font-bold text-gray-900 whitespace-nowrap">{formatCurrency(partsList.total_parts_cost)}</td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                          {/* Procurement notes */}
+                          {partsList.procurement_notes && (
+                            <div className="px-4 py-3 border-t bg-gray-50">
+                              <p className="text-xs text-gray-500">{partsList.procurement_notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">No parts list available for this job.</p>
+                    )}
+                  </div>
                 )}
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                {job.quotes?.[0] && (
-                  <span className="text-sm font-medium text-gray-700">{formatCurrency(job.quotes[0].estimate.total)}</span>
-                )}
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${JOB_STATUS_COLORS[job.status]}`}>
-                  {JOB_STATUS_LABELS[job.status]}
-                </span>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>

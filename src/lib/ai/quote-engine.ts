@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { AppSettings, QuoteEstimate, UrgencyLevel } from '@/types'
+import { AppSettings, QuoteEstimate, PartsListData, UrgencyLevel } from '@/types'
 
 export interface ClarifyingQuestion {
   id: string
@@ -163,6 +163,76 @@ Guidelines:
     const parsed = JSON.parse(jsonMatch[0])
     if (!parsed.needs_clarification) return null
     return parsed.questions as ClarifyingQuestion[]
+  } catch {
+    return null
+  }
+}
+
+export async function generatePartsList(
+  estimate: QuoteEstimate,
+  jobDescription: string,
+  jobType: string | null,
+  settings: AppSettings
+): Promise<PartsListData | null> {
+  const client = getClient(settings)
+
+  const systemPrompt = `You are a plumbing supply procurement assistant for ${settings.business_name} based in ${settings.service_area}.
+
+Given a plumbing job estimate, generate a detailed parts procurement list that a plumber can use to order materials from a local supplier.
+
+Return ONLY a JSON object with this structure:
+{
+  "supplier_name": "Primary recommended plumbing supply house name (e.g. Ferguson Plumbing Supply, Hajoca, Winsupply, HD Supply)",
+  "supplier_location": "City/region, e.g. '${settings.service_area} area'",
+  "backup_supplier": "Secondary option (e.g. 'Home Depot Pro / Lowe's Pro')",
+  "items": [
+    {
+      "name": "Specific product name with size/spec (e.g. 'SharkBite 1/2\" Push-to-Connect Coupling')",
+      "quantity": 2,
+      "unit": "ea.",
+      "estimated_unit_cost": 8.99,
+      "estimated_total": 17.98,
+      "notes": "Optional: brand alternative or stocking note"
+    }
+  ],
+  "total_parts_cost": 0.00,
+  "procurement_notes": "Any lead time, availability, or ordering notes"
+}
+
+Rules:
+- Use real product names a plumber would search for (include size, material, connection type)
+- Recommend a plumbing supply house as primary (not a big-box store) — they stock commercial-grade parts
+- Include ALL parts from the estimate line items, plus any consumables (thread tape, flux, solder, etc.)
+- Quantities should match or slightly exceed the estimate to account for waste
+- Prices should reflect trade/contractor pricing (typically 10-20% below retail)
+- total_parts_cost must equal the sum of all item estimated_totals`
+
+  const lineItemsSummary = estimate.line_items
+    .map(i => `- ${i.description}: qty ${i.quantity} ${i.unit}`)
+    .join('\n')
+
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1024,
+    system: systemPrompt,
+    messages: [{
+      role: 'user',
+      content: `Job type: ${jobType || 'Not specified'}
+Description: ${jobDescription}
+
+Estimate line items:
+${lineItemsSummary}
+
+Parts cost in estimate: $${estimate.parts_cost.toFixed(2)}`,
+    }],
+  })
+
+  const text = response.content[0].type === 'text' ? response.content[0].text : ''
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) return null
+
+  try {
+    return JSON.parse(jsonMatch[0]) as PartsListData
   } catch {
     return null
   }

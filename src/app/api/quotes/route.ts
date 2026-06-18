@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
   try {
-    const { description, job_type, urgency, estimate, client: clientInfo } = await req.json()
+    const { description, job_type, urgency, estimate, parts_list, client: clientInfo } = await req.json()
 
     const supabase = await createAdminClient()
 
@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       .insert({
         job_id: job.id,
         estimate,
+        parts_list: parts_list ?? null,
         ai_prompt_summary: description.slice(0, 300),
         status: 'pending',
       })

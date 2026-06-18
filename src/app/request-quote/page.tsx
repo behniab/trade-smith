@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Wrench, Upload, Loader2, AlertTriangle, Zap, CalendarCheck } from 'lucide-react'
 import Link from 'next/link'
-import { QuoteEstimate, UrgencyLevel, ClarifyingQuestion } from '@/types'
+import { QuoteEstimate, UrgencyLevel, ClarifyingQuestion, PartsListData } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
 const JOB_CATEGORIES: { label: string; jobs: string[] }[] = [
@@ -163,6 +163,7 @@ export default function RequestQuotePage() {
   const [jobId, setJobId] = useState<string | null>(null)
   const [questions, setQuestions] = useState<ClarifyingQuestion[] | null>(null)
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [partsList, setPartsList] = useState<PartsListData | null>(null)
 
   async function submitEstimateRequest(extraAnswers?: Record<string, string>) {
     setError('')
@@ -187,6 +188,7 @@ export default function RequestQuotePage() {
         setAnswers({})
       } else {
         setEstimate(data.estimate)
+        setPartsList(data.parts_list ?? null)
         setQuestions(null)
       }
     } catch (err: unknown) {
@@ -216,7 +218,7 @@ export default function RequestQuotePage() {
       const res = await fetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description, job_type: jobType, urgency, estimate, client: clientInfo }),
+        body: JSON.stringify({ description, job_type: jobType, urgency, estimate, parts_list: partsList, client: clientInfo }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to submit')

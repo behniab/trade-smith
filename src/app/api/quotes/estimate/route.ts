@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateQuote, QuoteAnswer } from '@/lib/ai/quote-engine'
+import { generateQuote, generatePartsList, QuoteAnswer } from '@/lib/ai/quote-engine'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AppSettings, UrgencyLevel } from '@/types'
 
@@ -42,7 +42,11 @@ export async function POST(req: NextRequest) {
     if (result.type === 'questions') {
       return NextResponse.json({ questions: result.questions })
     }
-    return NextResponse.json({ estimate: result.estimate })
+
+    // Generate parts list in parallel — admin-only, not shown to customer
+    const parts_list = await generatePartsList(result.estimate, description, job_type, settings).catch(() => null)
+
+    return NextResponse.json({ estimate: result.estimate, parts_list })
   } catch (err: unknown) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed to generate estimate' },
