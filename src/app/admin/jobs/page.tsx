@@ -43,42 +43,47 @@ export default function AdminJobsPage() {
   // weekStart timestamp used as a stable primitive dependency
   const weekStartTs = weekStart.getTime()
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function load() {
-      // One-time calendar setup
-      if (!setupDone.current) {
+  async function loadCalendar(weekTs: number) {
+    // One-time calendar setup
+    if (!setupDone.current) {
+      try {
         const setupRes = await fetch('/api/calendar/setup', { method: 'POST' })
         if (!setupRes.ok) {
-          if (!cancelled) setEventsError('Google Calendar not connected. Sign out and sign in again.')
+          const body = await setupRes.json().catch(() => ({}))
+          setEventsError(body.error || `Calendar setup failed (HTTP ${setupRes.status}). Sign out and sign in again.`)
+          setEventsLoading(false)
           return
         }
         setupDone.current = true
-      }
-
-      if (cancelled) return
-      setEventsLoading(true)
-      setEventsError('')
-
-      const start = new Date(weekStartTs)
-      const end = new Date(weekStartTs)
-      end.setDate(end.getDate() + 7)
-
-      try {
-        const res = await fetch(`/api/calendar/events?start=${start.toISOString()}&end=${end.toISOString()}`)
-        const data = await res.json()
-        if (data.error) throw new Error(data.error)
-        if (!cancelled) setEvents(data.events)
-      } catch (err: unknown) {
-        if (!cancelled) setEventsError(err instanceof Error ? err.message : 'Failed to load calendar')
-      } finally {
-        if (!cancelled) setEventsLoading(false)
+      } catch {
+        setEventsError('Could not reach the server. Check your connection and try again.')
+        setEventsLoading(false)
+        return
       }
     }
 
-    load()
-    return () => { cancelled = true }
+    setEventsLoading(true)
+    setEventsError('')
+
+    const start = new Date(weekTs)
+    const end = new Date(weekTs)
+    end.setDate(end.getDate() + 7)
+
+    try {
+      const res = await fetch(`/api/calendar/events?start=${start.toISOString()}&end=${end.toISOString()}`)
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setEvents(data.events)
+    } catch (err: unknown) {
+      setEventsError(err instanceof Error ? err.message : 'Failed to load calendar')
+    } finally {
+      setEventsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadCalendar(weekStartTs)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekStartTs])
 
   useEffect(() => {
@@ -138,7 +143,15 @@ export default function AdminJobsPage() {
         </div>
 
         {eventsError && (
-          <p className="text-sm text-red-600 bg-red-50 px-4 py-2">{eventsError}</p>
+          <div className="flex items-center justify-between gap-4 bg-red-50 px-4 py-2">
+            <p className="text-sm text-red-600">{eventsError}</p>
+            <button
+              onClick={() => { setupDone.current = false; loadCalendar(weekStartTs) }}
+              className="shrink-0 text-xs text-red-700 underline hover:no-underline"
+            >
+              Retry
+            </button>
+          </div>
         )}
 
         <div className="overflow-x-auto">
