@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateQuote } from '@/lib/ai/quote-engine'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { AppSettings, UrgencyLevel } from '@/types'
 
 const DEFAULT_SETTINGS: AppSettings = {

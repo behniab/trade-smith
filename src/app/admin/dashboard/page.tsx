@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { formatCurrency, formatDate, JOB_STATUS_COLORS, JOB_STATUS_LABELS } from '@/lib/utils'
 import Link from 'next/link'
 import { Briefcase, Users, FileText, TrendingUp } from 'lucide-react'
