@@ -373,7 +373,7 @@ export default function RequestQuotePage() {
                     </div>
                   )}
                   <div className="flex justify-between font-bold text-lg pt-2 border-t text-gray-900">
-                    <span>Total Estimate</span>
+                    <span className="text-black">Total Estimate</span>
                     <span className="text-blue-600">{formatCurrency(estimate.total)}</span>
                   </div>
                 </div>
