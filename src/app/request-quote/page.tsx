@@ -85,24 +85,33 @@ const URGENCY_OPTIONS: { value: UrgencyLevel; label: string; desc: string; icon:
   { value: 'emergency', label: 'Emergency', desc: 'Right now', icon: <Zap className="w-4 h-4" /> },
 ]
 
+function parseNoteItems(notes: string): string[] {
+  // Extract all numbered items: "1. text" anywhere in the string, separated by
+  // newlines, double-spaces, or simply the next "N. " pattern inline.
+  const matches = [...notes.matchAll(/\d+\.\s+(.+?)(?=\s*\d+\.\s|\s*$)/gs)]
+  if (matches.length > 1) return matches.map(m => m[1].trim())
+
+  // Fallback: split on newlines
+  const lines = notes.split(/\n+/).map(l => l.replace(/^\d+\.\s*/, '').trim()).filter(Boolean)
+  if (lines.length > 1) return lines
+
+  return []
+}
+
 function EstimateNotes({ notes }: { notes: string }) {
-  // Split on numbered list patterns like "1. ... 2. ..." whether inline or on new lines
-  const items = notes
-    .split(/(?:^|\n|\s{2,})(?=\d+\.\s)/)
-    .map(s => s.replace(/^\d+\.\s*/, '').trim())
-    .filter(Boolean)
+  const items = parseNoteItems(notes)
 
   if (items.length > 1) {
     return (
-      <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-2">
+      <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-2.5">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Notes</p>
-        <ol className="space-y-1.5">
+        <ol className="space-y-0">
           {items.map((item, i) => (
-            <li key={i} className="flex gap-2.5 text-xs text-gray-600">
-              <span className="shrink-0 w-4 h-4 rounded-full bg-blue-100 text-blue-700 font-semibold flex items-center justify-center text-[10px]">
+            <li key={i} className={`flex gap-3 text-xs text-gray-700 py-2 ${i < items.length - 1 ? 'border-b border-gray-200' : ''}`}>
+              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px] mt-0.5">
                 {i + 1}
               </span>
-              <span>{item}</span>
+              <span className="leading-relaxed">{item}</span>
             </li>
           ))}
         </ol>
@@ -112,8 +121,8 @@ function EstimateNotes({ notes }: { notes: string }) {
 
   return (
     <div className="bg-gray-50 rounded-lg px-4 py-3">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Notes</p>
-      <p className="text-xs text-gray-600">{notes}</p>
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Notes</p>
+      <p className="text-xs text-gray-700 leading-relaxed">{notes}</p>
     </div>
   )
 }

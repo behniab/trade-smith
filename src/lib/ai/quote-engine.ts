@@ -43,7 +43,7 @@ Return a JSON object matching this exact structure:
   "total": number,
   "summary": "1-2 sentence plain-English summary of the job and estimate",
   "confidence": "low" | "medium" | "high",
-  "notes": "any caveats, e.g. 'Final price may vary once wall is opened'"
+  "notes": "any caveats as a numbered list, one per line, e.g. '1. Final price may vary once wall is opened\n2. Permit may be required'"
 }
 
 Rules:
