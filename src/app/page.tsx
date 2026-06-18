@@ -29,7 +29,7 @@ export default function HomePage() {
             <span className="text-blue-600">Instant Estimates</span>
           </h1>
           <p className="text-xl text-gray-600 mb-10 max-w-xl mx-auto">
-            Describe your job, upload photos, and get an AI-powered cost estimate in seconds. No waiting, no guessing.
+            Describe your job, upload photos, and get an instant cost estimate in seconds. No waiting, no guessing.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Link href="/request-quote" className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition">
@@ -46,7 +46,7 @@ export default function HomePage() {
       <section className="bg-white px-6 py-20">
         <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
-            { icon: Clock, title: 'Instant Estimates', desc: 'AI-powered quotes based on your description and photos' },
+            { icon: Clock, title: 'Instant Estimates', desc: 'Fast quotes based on your description and photos' },
             { icon: Wrench, title: 'All Plumbing Jobs', desc: 'From leaky faucets to full remodels and emergency repairs' },
             { icon: Star, title: 'Quality Guaranteed', desc: 'Licensed, insured professionals with a satisfaction guarantee' },
             { icon: Shield, title: 'Transparent Pricing', desc: 'Clear line-item estimates before any work begins' },
