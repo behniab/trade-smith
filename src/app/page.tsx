@@ -1,65 +1,76 @@
-import Image from "next/image";
+import Link from 'next/link'
+import { Wrench, Clock, Star, Shield } from 'lucide-react'
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="flex flex-col min-h-screen">
+      {/* Nav */}
+      <nav className="border-b bg-white px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2 font-bold text-xl text-blue-600">
+          <Wrench className="w-5 h-5" />
+          Trade-Smith
+        </div>
+        <div className="flex items-center gap-4">
+          <Link href="/gallery" className="text-sm text-gray-600 hover:text-gray-900">Gallery</Link>
+          <Link href="/request-quote" className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700">
+            Get a Quote
+          </Link>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section className="flex-1 bg-gradient-to-br from-blue-50 to-white px-6 py-24 text-center">
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
+            Professional Plumbing,<br />
+            <span className="text-blue-600">Instant Estimates</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-xl text-gray-600 mb-10 max-w-xl mx-auto">
+            Describe your job, upload photos, and get an AI-powered cost estimate in seconds. No waiting, no guessing.
           </p>
+          <div className="flex gap-4 justify-center flex-wrap">
+            <Link href="/request-quote" className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition">
+              Get an Instant Quote
+            </Link>
+            <Link href="/gallery" className="border border-gray-300 text-gray-700 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-50 transition">
+              View Our Work
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* Features */}
+      <section className="bg-white px-6 py-20">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {[
+            { icon: Clock, title: 'Instant Estimates', desc: 'AI-powered quotes based on your description and photos' },
+            { icon: Wrench, title: 'All Plumbing Jobs', desc: 'From leaky faucets to full remodels and emergency repairs' },
+            { icon: Star, title: 'Quality Guaranteed', desc: 'Licensed, insured professionals with a satisfaction guarantee' },
+            { icon: Shield, title: 'Transparent Pricing', desc: 'Clear line-item estimates before any work begins' },
+          ].map(({ icon: Icon, title, desc }) => (
+            <div key={title} className="text-center">
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Icon className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
+              <p className="text-sm text-gray-500">{desc}</p>
+            </div>
+          ))}
         </div>
-      </main>
+      </section>
+
+      {/* CTA */}
+      <section className="bg-blue-600 px-6 py-16 text-center text-white">
+        <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
+        <p className="text-blue-100 mb-8">Describe your job and get a quote in under a minute.</p>
+        <Link href="/request-quote" className="bg-white text-blue-600 font-semibold px-8 py-4 rounded-xl hover:bg-blue-50 transition">
+          Request a Quote Now
+        </Link>
+      </section>
+
+      <footer className="border-t px-6 py-6 text-center text-sm text-gray-500">
+        © {new Date().getFullYear()} Trade-Smith. All rights reserved.
+      </footer>
     </div>
-  );
+  )
 }
