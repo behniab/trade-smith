@@ -62,15 +62,23 @@ Customer description: ${description}`
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 1024,
+    max_tokens: 4096,
     system: systemPrompt,
     messages: [{ role: 'user', content: userMessage }],
   })
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
 
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('AI did not return valid JSON estimate')
+  if (response.stop_reason === 'max_tokens') {
+    throw new Error('Estimate generation was cut short — please try again or simplify your description.')
+  }
 
-  return JSON.parse(jsonMatch[0]) as QuoteEstimate
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) throw new Error('Could not generate a valid estimate. Please try again.')
+
+  try {
+    return JSON.parse(jsonMatch[0]) as QuoteEstimate
+  } catch {
+    throw new Error('Could not parse the estimate. Please try again.')
+  }
 }
