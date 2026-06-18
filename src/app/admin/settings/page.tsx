@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2, Save } from 'lucide-react'
+import { Loader2, Save, KeyRound, CheckCircle2, XCircle } from 'lucide-react'
 import { AppSettings } from '@/types'
+
+const MASK = '••••••••••••••••'
 
 const DEFAULT: AppSettings = {
   labor_rate_per_hour: 125,
@@ -16,6 +18,7 @@ const DEFAULT: AppSettings = {
   business_address: '',
   license_number: null,
   stripe_enabled: false,
+  anthropic_api_key: '',
 }
 
 export default function SettingsPage() {
@@ -23,10 +26,20 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [anthropicKey, setAnthropicKey] = useState('')
+  const [keyIsSet, setKeyIsSet] = useState(false)
+  const [savingKey, setSavingKey] = useState(false)
+  const [savedKey, setSavedKey] = useState(false)
+  const [testingKey, setTestingKey] = useState(false)
+  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null)
+  const [testError, setTestError] = useState('')
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
-      if (d.settings) setSettings({ ...DEFAULT, ...d.settings })
+      if (d.settings) {
+        setSettings({ ...DEFAULT, ...d.settings, anthropic_api_key: '' })
+        setKeyIsSet(d.settings.anthropic_api_key === MASK)
+      }
       setLoading(false)
     })
   }, [])
@@ -42,6 +55,38 @@ export default function SettingsPage() {
     await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) })
     setSaving(false)
     setSaved(true)
+  }
+
+  async function handleSaveKey(e: React.FormEvent) {
+    e.preventDefault()
+    if (!anthropicKey.trim()) return
+    setSavingKey(true)
+    setSavedKey(false)
+    setTestResult(null)
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ anthropic_api_key: anthropicKey.trim() }),
+    })
+    setSavingKey(false)
+    setSavedKey(true)
+    setKeyIsSet(true)
+    setAnthropicKey('')
+  }
+
+  async function handleTestKey() {
+    setTestingKey(true)
+    setTestResult(null)
+    setTestError('')
+    const res = await fetch('/api/settings/test-anthropic', { method: 'POST' })
+    const data = await res.json()
+    setTestingKey(false)
+    if (data.ok) {
+      setTestResult('success')
+    } else {
+      setTestResult('error')
+      setTestError(data.error || 'Test failed')
+    }
   }
 
   if (loading) {
@@ -83,6 +128,74 @@ export default function SettingsPage() {
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Settings'}
         </button>
+      </form>
+
+      {/* API Keys — separate form so keys aren't bundled with business settings */}
+      <form onSubmit={handleSaveKey} className="mt-6 space-y-6">
+        <section className="bg-white rounded-xl border p-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <KeyRound className="w-4 h-4 text-gray-500" />
+            <h2 className="font-semibold text-gray-900">API Keys</h2>
+          </div>
+          <p className="text-xs text-gray-500">
+            Enter your own Anthropic API key so this deployment uses your account for quote generation.
+            Keys are stored encrypted and never returned in plain text.
+          </p>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Anthropic API Key
+              {keyIsSet && (
+                <span className="ml-2 inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full font-normal">
+                  <CheckCircle2 className="w-3 h-3" /> Configured
+                </span>
+              )}
+            </label>
+            <input
+              type="password"
+              value={anthropicKey}
+              onChange={e => { setAnthropicKey(e.target.value); setSavedKey(false); setTestResult(null) }}
+              placeholder={keyIsSet ? 'Enter a new key to replace the existing one' : 'sk-ant-...'}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Get your key at <span className="font-mono">console.anthropic.com</span> → API Keys
+            </p>
+          </div>
+
+          {testResult === 'success' && (
+            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" /> API key is valid and working.
+            </div>
+          )}
+          {testResult === 'error' && (
+            <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <XCircle className="w-4 h-4 shrink-0" /> {testError}
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={savingKey || !anthropicKey.trim()}
+              className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50"
+            >
+              {savingKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {savingKey ? 'Saving...' : savedKey ? 'Saved!' : 'Save Key'}
+            </button>
+            {keyIsSet && (
+              <button
+                type="button"
+                onClick={handleTestKey}
+                disabled={testingKey}
+                className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                {testingKey ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {testingKey ? 'Testing...' : 'Test Connection'}
+              </button>
+            )}
+          </div>
+        </section>
       </form>
     </div>
   )

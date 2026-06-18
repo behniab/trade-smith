@@ -1,8 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { AppSettings, QuoteEstimate, UrgencyLevel } from '@/types'
 
-const client = new Anthropic()
-
 interface QuoteInput {
   description: string
   job_type: string | null
@@ -13,6 +11,10 @@ interface QuoteInput {
 
 export async function generateQuote(input: QuoteInput): Promise<QuoteEstimate> {
   const { description, job_type, urgency, settings } = input
+
+  const apiKey = settings.anthropic_api_key || process.env.ANTHROPIC_API_KEY
+  if (!apiKey) throw new Error('No Anthropic API key configured. Add one in Settings → API Keys.')
+  const client = new Anthropic({ apiKey })
 
   const urgencyMultiplier =
     urgency === 'emergency'

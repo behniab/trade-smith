@@ -115,4 +115,5 @@ export interface AppSettings {
   business_address: string
   license_number: string | null
   stripe_enabled: boolean
+  anthropic_api_key?: string | null
 }
