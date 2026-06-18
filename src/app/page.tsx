@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Wrench, Clock, Star, Shield } from 'lucide-react'
+import { Wrench, Clock, Star, Shield, Settings } from 'lucide-react'
 
 export default function HomePage() {
   return (
@@ -11,6 +11,9 @@ export default function HomePage() {
           Trade-Smith
         </div>
         <div className="flex items-center gap-4">
+          <Link href="/auth/signin" className="text-gray-400 hover:text-gray-600 transition" title="Admin">
+            <Settings className="w-5 h-5" />
+          </Link>
           <Link href="/gallery" className="text-sm text-gray-600 hover:text-gray-900">Gallery</Link>
           <Link href="/request-quote" className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700">
             Get a Quote
