@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateQuote } from '@/lib/ai/quote-engine'
+import { generateQuote, QuoteAnswer } from '@/lib/ai/quote-engine'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AppSettings, UrgencyLevel } from '@/types'
 
@@ -23,30 +23,27 @@ export async function POST(req: NextRequest) {
     const description = formData.get('description') as string
     const job_type = formData.get('job_type') as string | null
     const urgency = (formData.get('urgency') as UrgencyLevel) || 'standard'
+    const answersRaw = formData.get('answers') as string | null
+    const answers: QuoteAnswer[] = answersRaw ? JSON.parse(answersRaw) : []
 
     if (!description?.trim()) {
       return NextResponse.json({ error: 'Description is required' }, { status: 400 })
     }
 
-    // Load settings from DB, fall back to defaults
     let settings = DEFAULT_SETTINGS
     try {
-      const supabase = await createAdminClient()
+      const supabase = createAdminClient()
       const { data } = await supabase.from('settings').select('*').single()
       if (data) settings = { ...DEFAULT_SETTINGS, ...data }
     } catch {}
 
-    const estimate = await generateQuote({
-      description,
-      job_type: job_type || null,
-      urgency,
-      media_urls: [], // TODO: upload to storage and pass URLs
-      settings,
-    })
+    const result = await generateQuote({ description, job_type, urgency, media_urls: [], settings, answers })
 
-    return NextResponse.json({ estimate })
+    if (result.type === 'questions') {
+      return NextResponse.json({ questions: result.questions })
+    }
+    return NextResponse.json({ estimate: result.estimate })
   } catch (err: unknown) {
-    console.error('Quote estimate error:', err)
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed to generate estimate' },
       { status: 500 }

@@ -103,6 +103,13 @@ export interface JobTemplate {
   category: string
 }
 
+export interface ClarifyingQuestion {
+  id: string
+  question: string
+  type: 'single_choice' | 'text'
+  options?: string[]
+}
+
 export interface AppSettings {
   labor_rate_per_hour: number
   parts_markup_percent: number

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Wrench, Upload, Loader2, AlertTriangle, Zap, CalendarCheck } from 'lucide-react'
 import Link from 'next/link'
-import { QuoteEstimate, UrgencyLevel } from '@/types'
+import { QuoteEstimate, UrgencyLevel, ClarifyingQuestion } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
 const JOB_CATEGORIES: { label: string; jobs: string[] }[] = [
@@ -161,29 +161,50 @@ export default function RequestQuotePage() {
   const [clientInfo, setClientInfo] = useState({ name: '', email: '', phone: '' })
   const [submitted, setSubmitted] = useState(false)
   const [jobId, setJobId] = useState<string | null>(null)
+  const [questions, setQuestions] = useState<ClarifyingQuestion[] | null>(null)
+  const [answers, setAnswers] = useState<Record<string, string>>({})
 
-  async function handleGetEstimate(e: React.FormEvent) {
-    e.preventDefault()
-    if (!description.trim()) { setError('Please describe your job.'); return }
+  async function submitEstimateRequest(extraAnswers?: Record<string, string>) {
     setError('')
     setLoading(true)
-
     try {
       const formData = new FormData()
       formData.append('description', description)
       formData.append('job_type', jobType)
       formData.append('urgency', urgency)
       files.forEach(f => formData.append('media', f))
+      if (extraAnswers && Object.keys(extraAnswers).length > 0) {
+        const answerList = Object.entries(extraAnswers).map(([id, answer]) => ({ id, answer }))
+        formData.append('answers', JSON.stringify(answerList))
+      }
 
       const res = await fetch('/api/quotes/estimate', { method: 'POST', body: formData })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to generate estimate')
-      setEstimate(data.estimate)
+
+      if (data.questions) {
+        setQuestions(data.questions)
+        setAnswers({})
+      } else {
+        setEstimate(data.estimate)
+        setQuestions(null)
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleGetEstimate(e: React.FormEvent) {
+    e.preventDefault()
+    if (!description.trim()) { setError('Please describe your job.'); return }
+    await submitEstimateRequest()
+  }
+
+  async function handleAnswersSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    await submitEstimateRequest(answers)
   }
 
   async function handleBookJob(e: React.FormEvent) {
@@ -248,7 +269,65 @@ export default function RequestQuotePage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Get an Instant Quote</h1>
         <p className="text-gray-500 mb-8">Describe your job and we&apos;ll generate a cost estimate in seconds.</p>
 
-        {!estimate ? (
+        {questions && !estimate ? (
+          <form onSubmit={handleAnswersSubmit} className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 mb-2">
+              <p className="text-sm font-semibold text-blue-800 mb-0.5">A few quick questions</p>
+              <p className="text-xs text-blue-600">Your answers help us give you a more accurate estimate.</p>
+            </div>
+
+            {questions.map((q, i) => (
+              <div key={q.id} className="bg-white rounded-xl border p-5 space-y-3">
+                <p className="text-sm font-semibold text-gray-800">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold mr-2">{i + 1}</span>
+                  {q.question}
+                </p>
+                {q.type === 'single_choice' && q.options ? (
+                  <div className="grid grid-cols-1 gap-2">
+                    {q.options.map(opt => (
+                      <label key={opt} className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition text-sm ${
+                        answers[q.id] === opt
+                          ? 'bg-blue-50 border-blue-400 text-blue-800 font-medium'
+                          : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                      }`}>
+                        <input
+                          type="radio"
+                          name={q.id}
+                          value={opt}
+                          checked={answers[q.id] === opt}
+                          onChange={() => setAnswers(p => ({ ...p, [q.id]: opt }))}
+                          className="accent-blue-600"
+                        />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="Your answer..."
+                    value={answers[q.id] || ''}
+                    onChange={e => setAnswers(p => ({ ...p, [q.id]: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  />
+                )}
+              </div>
+            ))}
+
+            {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-lg">{error}</p>}
+
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setQuestions(null)}
+                className="flex-1 border text-gray-600 py-3 rounded-xl font-medium hover:bg-gray-50 transition text-sm">
+                Back
+              </button>
+              <button type="submit" disabled={loading}
+                className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition disabled:opacity-60 flex items-center justify-center gap-2 text-sm">
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating estimate...</> : 'Get My Estimate'}
+              </button>
+            </div>
+          </form>
+        ) : !estimate ? (
           <form onSubmit={handleGetEstimate} className="space-y-6">
             {/* Job type */}
             <div className="bg-white rounded-xl border p-6">
