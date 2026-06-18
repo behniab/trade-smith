@@ -294,20 +294,20 @@ export default function RequestQuotePage() {
               </div>
 
               <div className="p-6 space-y-4">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm table-auto">
                   <thead>
                     <tr className="text-left text-gray-500 border-b">
                       <th className="pb-2 font-medium">Item</th>
-                      <th className="pb-2 font-medium text-right">Qty</th>
-                      <th className="pb-2 font-medium text-right">Cost</th>
+                      <th className="pb-2 font-medium text-right whitespace-nowrap pl-4">Qty</th>
+                      <th className="pb-2 font-medium text-right whitespace-nowrap pl-4">Cost</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {estimate.line_items.map((item, i) => (
                       <tr key={i}>
                         <td className="py-2 text-gray-700">{item.description}</td>
-                        <td className="py-2 text-right text-gray-500">{item.quantity} {item.unit}</td>
-                        <td className="py-2 text-right font-medium text-gray-900">{formatCurrency(item.total)}</td>
+                        <td className="py-2 text-right text-gray-500 whitespace-nowrap pl-4">{item.quantity} {item.unit}</td>
+                        <td className="py-2 text-right font-medium text-gray-900 whitespace-nowrap pl-4">{formatCurrency(item.total)}</td>
                       </tr>
                     ))}
                   </tbody>
