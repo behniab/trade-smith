@@ -96,7 +96,7 @@ export default function RequestQuotePage() {
           <div className="flex flex-col gap-3">
             {jobId && (
               <Link
-                href={`/schedule/${jobId}`}
+                href={`/schedule/${jobId}?name=${encodeURIComponent(clientInfo.name)}&email=${encodeURIComponent(clientInfo.email)}`}
                 className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
               >
                 <CalendarCheck className="w-5 h-5" />

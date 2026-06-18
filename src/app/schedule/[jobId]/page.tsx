@@ -32,8 +32,15 @@ function fmtSlot(date: Date, hour: number) {
   return `${start.toLocaleTimeString('en-US', opts)} – ${end.toLocaleTimeString('en-US', opts)}`
 }
 
-export default function SchedulePage({ params }: { params: Promise<{ jobId: string }> }) {
+export default function SchedulePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ jobId: string }>
+  searchParams: Promise<{ name?: string; email?: string }>
+}) {
   const { jobId } = use(params)
+  const { name: prefillName = '', email: prefillEmail = '' } = use(searchParams)
 
   const [weekStart, setWeekStart] = useState(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0)
@@ -49,7 +56,7 @@ export default function SchedulePage({ params }: { params: Promise<{ jobId: stri
   const [busy, setBusy] = useState<BusySlot[]>([])
   const [loadingBusy, setLoadingBusy] = useState(false)
   const [selected, setSelected] = useState<{ date: Date; hour: number } | null>(null)
-  const [clientInfo, setClientInfo] = useState({ name: '', email: '', phone: '' })
+  const [clientInfo, setClientInfo] = useState({ name: prefillName, email: prefillEmail, phone: '' })
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
