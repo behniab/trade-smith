@@ -12,8 +12,10 @@ interface QuoteInput {
 export async function generateQuote(input: QuoteInput): Promise<QuoteEstimate> {
   const { description, job_type, urgency, settings } = input
 
-  const apiKey = settings.anthropic_api_key || process.env.ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('No Anthropic API key configured. Add one in Settings → API Keys.')
+  const rawKey = settings.anthropic_api_key || process.env.ANTHROPIC_API_KEY
+  if (!rawKey) throw new Error('No Anthropic API key configured. Add one in Settings → API Keys.')
+  // Strip UTF-16 BOM (0xFEFF) that PowerShell injects when piping to Vercel CLI
+  const apiKey = rawKey.replace(/^﻿/, '')
   const client = new Anthropic({ apiKey })
 
   const urgencyMultiplier =
