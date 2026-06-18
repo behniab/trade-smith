@@ -43,7 +43,7 @@ Return a JSON object matching this exact structure:
   "total": number,
   "summary": "1-2 sentence plain-English summary of the job and estimate",
   "confidence": "low" | "medium" | "high",
-  "notes": "any caveats as a numbered list, one per line, e.g. '1. Final price may vary once wall is opened\n2. Permit may be required'"
+  "notes": "caveats as a newline-separated numbered list ONLY. No inline lists, no parentheses style. Each item on its own line. Example format:\n1. Final price may vary once wall is opened\n2. Permit may be required\n3. Drywall repair not included"
 }
 
 Rules:
@@ -54,7 +54,8 @@ Rules:
 - total = subtotal + urgency_surcharge
 - Use realistic parts prices for ${settings.service_area}
 - Be conservative — err toward medium estimates with a note
-- confidence is "low" if description is vague, "high" if very specific`
+- confidence is "low" if description is vague, "high" if very specific
+- notes MUST be a newline-separated numbered list (1. item\n2. item). Never write inline lists like "(1) ... (2) ...". Never write a prose paragraph for notes.`
 
   const userMessage = `Job type: ${job_type || 'Not specified'}
 Urgency: ${urgency}

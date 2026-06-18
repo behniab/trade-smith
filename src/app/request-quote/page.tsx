@@ -85,26 +85,48 @@ const URGENCY_OPTIONS: { value: UrgencyLevel; label: string; desc: string; icon:
   { value: 'emergency', label: 'Emergency', desc: 'Right now', icon: <Zap className="w-4 h-4" /> },
 ]
 
-function parseNoteItems(notes: string): string[] {
-  // Extract all numbered items: "1. text" anywhere in the string, separated by
-  // newlines, double-spaces, or simply the next "N. " pattern inline.
-  const matches = [...notes.matchAll(/\d+\.\s+(.+?)(?=\s*\d+\.\s|\s*$)/gs)]
-  if (matches.length > 1) return matches.map(m => m[1].trim())
+function parseNoteItems(notes: string): { preamble: string; items: string[] } {
+  // Normalise: replace inline list markers like "(1)" or "1)" with "1."
+  const normalised = notes
+    .replace(/\((\d+)\)\s*/g, '$1. ')   // (1) → 1.
+    .replace(/\b(\d+)\)\s*/g, '$1. ')   // 1)  → 1.
 
-  // Fallback: split on newlines
-  const lines = notes.split(/\n+/).map(l => l.replace(/^\d+\.\s*/, '').trim()).filter(Boolean)
-  if (lines.length > 1) return lines
+  // Try newline-separated first ("1.\nfoo\n2.\nbar")
+  const byLine = normalised.split(/\n+/)
+  const lineItems = byLine
+    .map(l => l.replace(/^\d+\.\s*/, '').trim())
+    .filter(Boolean)
 
-  return []
+  if (byLine.some(l => /^\d+\.\s/.test(l.trim())) && lineItems.length > 1) {
+    // Check for a preamble line before the first numbered item
+    const firstNumbered = byLine.findIndex(l => /^\d+\.\s/.test(l.trim()))
+    const preamble = byLine.slice(0, firstNumbered).join(' ').trim()
+    const items = byLine.slice(firstNumbered).map(l => l.replace(/^\d+\.\s*/, '').trim()).filter(Boolean)
+    return { preamble, items }
+  }
+
+  // Inline list: "Some text: 1. Foo 2. Bar 3. Baz"
+  // Split on the colon/sentence boundary before the first number if present
+  const colonSplit = normalised.match(/^(.*?[:\.])\s*(1\.\s.+)$/s)
+  const searchText = colonSplit ? colonSplit[2] : normalised
+  const preamble = colonSplit ? colonSplit[1].replace(/[:\.]$/, '').trim() : ''
+
+  const inlineMatches = [...searchText.matchAll(/\d+\.\s+(.+?)(?=\s+\d+\.\s|$)/gs)]
+  if (inlineMatches.length > 1) {
+    return { preamble, items: inlineMatches.map(m => m[1].trim()) }
+  }
+
+  return { preamble: '', items: [] }
 }
 
 function EstimateNotes({ notes }: { notes: string }) {
-  const items = parseNoteItems(notes)
+  const { preamble, items } = parseNoteItems(notes)
 
-  if (items.length > 1) {
+  if (items.length > 0) {
     return (
-      <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-2.5">
+      <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-2">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Notes</p>
+        {preamble && <p className="text-xs text-gray-600 leading-relaxed">{preamble}</p>}
         <ol className="space-y-0">
           {items.map((item, i) => (
             <li key={i} className={`flex gap-3 text-xs text-gray-700 py-2 ${i < items.length - 1 ? 'border-b border-gray-200' : ''}`}>
