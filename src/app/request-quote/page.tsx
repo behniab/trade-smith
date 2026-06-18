@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Wrench, Upload, Loader2, AlertTriangle, Zap } from 'lucide-react'
+import { Wrench, Upload, Loader2, AlertTriangle, Zap, CalendarCheck } from 'lucide-react'
 import Link from 'next/link'
 import { QuoteEstimate, UrgencyLevel } from '@/types'
 import { formatCurrency } from '@/lib/utils'
@@ -36,6 +36,7 @@ export default function RequestQuotePage() {
   const [estimate, setEstimate] = useState<QuoteEstimate | null>(null)
   const [clientInfo, setClientInfo] = useState({ name: '', email: '', phone: '' })
   const [submitted, setSubmitted] = useState(false)
+  const [jobId, setJobId] = useState<string | null>(null)
 
   async function handleGetEstimate(e: React.FormEvent) {
     e.preventDefault()
@@ -74,6 +75,7 @@ export default function RequestQuotePage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to submit')
+      setJobId(data.job_id)
       setSubmitted(true)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -90,8 +92,19 @@ export default function RequestQuotePage() {
             <Wrench className="w-8 h-8 text-green-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-3">Request Submitted!</h2>
-          <p className="text-gray-500 mb-8">We&apos;ll review your request and be in touch shortly to confirm your appointment.</p>
-          <Link href="/" className="text-blue-600 font-medium hover:underline">Back to home</Link>
+          <p className="text-gray-500 mb-6">Your quote has been received. You can wait for us to contact you, or book a time slot right now.</p>
+          <div className="flex flex-col gap-3">
+            {jobId && (
+              <Link
+                href={`/schedule/${jobId}`}
+                className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
+              >
+                <CalendarCheck className="w-5 h-5" />
+                Schedule Repair Now
+              </Link>
+            )}
+            <Link href="/" className="text-blue-600 font-medium hover:underline text-sm">Back to home</Link>
+          </div>
         </div>
       </div>
     )

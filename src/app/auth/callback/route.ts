@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 const ADMIN_EMAIL = 'behniab@gmail.com'
 
@@ -26,7 +27,15 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && data.user?.email === ADMIN_EMAIL) {
-      return NextResponse.redirect(`${origin}/admin/settings`)
+      // Store Google refresh token for Calendar API use
+      if (data.session?.provider_refresh_token) {
+        const admin = createAdminClient()
+        await admin
+          .from('settings')
+          .update({ google_refresh_token: data.session.provider_refresh_token })
+          .eq('id', 1)
+      }
+      return NextResponse.redirect(`${origin}/admin/jobs`)
     }
 
     if (!error && data.user?.email !== ADMIN_EMAIL) {
