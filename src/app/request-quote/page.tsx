@@ -85,6 +85,39 @@ const URGENCY_OPTIONS: { value: UrgencyLevel; label: string; desc: string; icon:
   { value: 'emergency', label: 'Emergency', desc: 'Right now', icon: <Zap className="w-4 h-4" /> },
 ]
 
+function EstimateNotes({ notes }: { notes: string }) {
+  // Split on numbered list patterns like "1. ... 2. ..." whether inline or on new lines
+  const items = notes
+    .split(/(?:^|\n|\s{2,})(?=\d+\.\s)/)
+    .map(s => s.replace(/^\d+\.\s*/, '').trim())
+    .filter(Boolean)
+
+  if (items.length > 1) {
+    return (
+      <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-2">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Notes</p>
+        <ol className="space-y-1.5">
+          {items.map((item, i) => (
+            <li key={i} className="flex gap-2.5 text-xs text-gray-600">
+              <span className="shrink-0 w-4 h-4 rounded-full bg-blue-100 text-blue-700 font-semibold flex items-center justify-center text-[10px]">
+                {i + 1}
+              </span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-gray-50 rounded-lg px-4 py-3">
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Notes</p>
+      <p className="text-xs text-gray-600">{notes}</p>
+    </div>
+  )
+}
+
 export default function RequestQuotePage() {
   const router = useRouter()
   const [jobType, setJobType] = useState('')
@@ -335,7 +368,7 @@ export default function RequestQuotePage() {
                 </div>
 
                 {estimate.notes && (
-                  <p className="text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">{estimate.notes}</p>
+                  <EstimateNotes notes={estimate.notes} />
                 )}
               </div>
             </div>
