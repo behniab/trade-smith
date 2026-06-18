@@ -339,7 +339,9 @@ export default function RequestQuotePage() {
                     {estimate.line_items.map((item, i) => (
                       <tr key={i}>
                         <td className="py-2 text-gray-700">{item.description}</td>
-                        <td className="py-2 text-right text-gray-500 whitespace-nowrap pl-4">{item.quantity} {item.unit}</td>
+                        <td className="py-2 text-right text-gray-500 whitespace-nowrap pl-4">
+                          {item.quantity} {item.unit === 'each' ? 'ea.' : item.unit === 'hours' ? 'hrs' : item.unit}
+                        </td>
                         <td className="py-2 text-right font-medium text-gray-900 whitespace-nowrap pl-4">{formatCurrency(item.total)}</td>
                       </tr>
                     ))}
@@ -361,7 +363,7 @@ export default function RequestQuotePage() {
                       <span>+{formatCurrency(estimate.urgency_surcharge)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                  <div className="flex justify-between font-bold text-lg pt-2 border-t text-gray-900">
                     <span>Total Estimate</span>
                     <span className="text-blue-600">{formatCurrency(estimate.total)}</span>
                   </div>
