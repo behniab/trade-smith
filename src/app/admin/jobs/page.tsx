@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ChevronLeft, ChevronRight, Loader2, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { formatCurrency, JOB_STATUS_COLORS, JOB_STATUS_LABELS } from '@/lib/utils'
@@ -37,44 +37,50 @@ export default function AdminJobsPage() {
   const [events, setEvents] = useState<CalEvent[]>([])
   const [eventsLoading, setEventsLoading] = useState(false)
   const [eventsError, setEventsError] = useState('')
-  const [calendarReady, setCalendarReady] = useState(false)
   const [jobs, setJobs] = useState<Job[]>([])
+  const setupDone = useRef(false)
 
-  const weekEnd = new Date(weekStart)
-  weekEnd.setDate(weekStart.getDate() + 7)
+  // weekStart timestamp used as a stable primitive dependency
+  const weekStartTs = weekStart.getTime()
 
-  const ensureCalendar = useCallback(async () => {
-    const res = await fetch('/api/calendar/setup', { method: 'POST' })
-    if (res.ok) setCalendarReady(true)
-    else setEventsError('Google Calendar not connected. Please sign out and sign in again.')
-  }, [])
+  useEffect(() => {
+    let cancelled = false
 
-  const loadEvents = useCallback(async () => {
-    setEventsLoading(true)
-    setEventsError('')
-    try {
-      const res = await fetch(
-        `/api/calendar/events?start=${weekStart.toISOString()}&end=${weekEnd.toISOString()}`
-      )
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
-      setEvents(data.events)
-    } catch (err: unknown) {
-      setEventsError(err instanceof Error ? err.message : 'Failed to load calendar')
-    } finally {
-      setEventsLoading(false)
+    async function load() {
+      // One-time calendar setup
+      if (!setupDone.current) {
+        const setupRes = await fetch('/api/calendar/setup', { method: 'POST' })
+        if (!setupRes.ok) {
+          if (!cancelled) setEventsError('Google Calendar not connected. Sign out and sign in again.')
+          return
+        }
+        setupDone.current = true
+      }
+
+      if (cancelled) return
+      setEventsLoading(true)
+      setEventsError('')
+
+      const start = new Date(weekStartTs)
+      const end = new Date(weekStartTs)
+      end.setDate(end.getDate() + 7)
+
+      try {
+        const res = await fetch(`/api/calendar/events?start=${start.toISOString()}&end=${end.toISOString()}`)
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+        if (!cancelled) setEvents(data.events)
+      } catch (err: unknown) {
+        if (!cancelled) setEventsError(err instanceof Error ? err.message : 'Failed to load calendar')
+      } finally {
+        if (!cancelled) setEventsLoading(false)
+      }
     }
-  }, [weekStart, weekEnd])
 
-  useEffect(() => {
-    ensureCalendar().then(() => loadEvents())
-  }, [ensureCalendar, loadEvents])
+    load()
+    return () => { cancelled = true }
+  }, [weekStartTs])
 
-  useEffect(() => {
-    if (calendarReady) loadEvents()
-  }, [weekStart, calendarReady, loadEvents])
-
-  // Load jobs
   useEffect(() => {
     fetch('/api/jobs')
       .then(r => r.json())
@@ -111,7 +117,8 @@ export default function AdminJobsPage() {
     return Math.max(28, dur * 56)
   }
 
-  const weekLabel = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${new Date(weekEnd.getTime() - 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+  const weekEndDisplay = new Date(weekStartTs + 6 * 86400000)
+  const weekLabel = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${weekEndDisplay.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
 
   return (
     <div className="p-6">
