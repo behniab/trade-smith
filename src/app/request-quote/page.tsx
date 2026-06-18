@@ -307,7 +307,7 @@ export default function RequestQuotePage() {
                       <tr key={i}>
                         <td className="py-2 text-gray-700">{item.description}</td>
                         <td className="py-2 text-right text-gray-500">{item.quantity} {item.unit}</td>
-                        <td className="py-2 text-right font-medium">{formatCurrency(item.total)}</td>
+                        <td className="py-2 text-right font-medium text-gray-900">{formatCurrency(item.total)}</td>
                       </tr>
                     ))}
                   </tbody>
