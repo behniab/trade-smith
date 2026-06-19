@@ -6,7 +6,23 @@ import Link from 'next/link'
 import { QuoteEstimate, UrgencyLevel, ClarifyingQuestion, PartsListData } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
-const JOB_CATEGORIES: { label: string; jobs: string[] }[] = [
+const JOB_CATEGORIES: { label: string; jobs: string[]; highlight?: boolean }[] = [
+  {
+    label: 'Certified Water Specialist',
+    highlight: true,
+    jobs: [
+      'Water quality assessment',
+      'Water softener installation',
+      'Water softener repair / recharge',
+      'Reverse osmosis system install',
+      'Whole-house water filtration',
+      'Iron / sulfur filtration system',
+      'UV water purification install',
+      'Water hardness testing & treatment',
+      'Scale & mineral buildup removal',
+      'Water treatment system maintenance',
+    ],
+  },
   {
     label: 'Faucets & Fixtures',
     jobs: [
@@ -293,23 +309,49 @@ export default function RequestQuotePage() {
               <div className="space-y-4 mb-4">
                 {JOB_CATEGORIES.map(cat => (
                   <div key={cat.label}>
-                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-2">{cat.label}</p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {cat.jobs.map(jt => (
-                        <button
-                          key={jt}
-                          type="button"
-                          onClick={() => setJobType(jt === 'Other / Describe below' ? '' : jt)}
-                          className={`text-left px-3 py-2 rounded-lg text-sm border transition ${
-                            jobType === jt
-                              ? 'bg-blue-500/10 border-blue-500 text-blue-300 font-medium'
-                              : 'border-white/5 bg-white/3 text-gray-400 hover:border-white/15 hover:text-gray-300'
-                          }`}
-                        >
-                          {jt}
-                        </button>
-                      ))}
-                    </div>
+                    {cat.highlight ? (
+                      <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 mb-1">
+                        <p className="text-xs font-bold text-cyan-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <span>★</span> {cat.label}
+                        </p>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {cat.jobs.map(jt => (
+                            <button
+                              key={jt}
+                              type="button"
+                              onClick={() => setJobType(jt)}
+                              className={`text-left px-3 py-2 rounded-lg text-sm border transition ${
+                                jobType === jt
+                                  ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300 font-medium'
+                                  : 'border-cyan-500/10 bg-cyan-500/5 text-gray-400 hover:border-cyan-500/30 hover:text-cyan-300'
+                              }`}
+                            >
+                              {jt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-2">{cat.label}</p>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {cat.jobs.map(jt => (
+                            <button
+                              key={jt}
+                              type="button"
+                              onClick={() => setJobType(jt === 'Other / Describe below' ? '' : jt)}
+                              className={`text-left px-3 py-2 rounded-lg text-sm border transition ${
+                                jobType === jt
+                                  ? 'bg-blue-500/10 border-blue-500 text-blue-300 font-medium'
+                                  : 'border-white/5 bg-white/3 text-gray-400 hover:border-white/15 hover:text-gray-300'
+                              }`}
+                            >
+                              {jt}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
