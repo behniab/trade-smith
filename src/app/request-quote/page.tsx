@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { QuoteEstimate, UrgencyLevel, ClarifyingQuestion, PartsListData } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
-const JOB_CATEGORIES: { label: string; jobs: string[]; highlight?: boolean }[] = [
+const JOB_CATEGORIES: { label: string; jobs: string[]; highlight?: boolean; description?: string }[] = [
   {
     label: 'Certified Water Specialist',
     highlight: true,
@@ -21,38 +21,28 @@ const JOB_CATEGORIES: { label: string; jobs: string[]; highlight?: boolean }[] =
       'Water hardness testing & treatment',
       'Scale & mineral buildup removal',
       'Water treatment system maintenance',
+      'Bottle-less water cooler installation',
     ],
   },
   {
-    label: 'Faucets & Fixtures',
+    label: '5 Gallon Bottled Water',
+    description: 'Delivery fee: $3.99 per stop',
     jobs: [
-      'Fix leaking faucet', 'Replace faucet', 'Fix running toilet', 'Install toilet',
-      'Replace toilet', 'Install bathroom sink', 'Install bathtub / shower', 'Fix shower pressure',
+      'Purified water — 5 gallon delivery',
+      'Aloha Plus — 5 gallon delivery (micro-clustered alkaline)',
+      'Distilled water — 5 gallon delivery',
+      'Hot & Cold cooler rental',
+      'Room temp & Cold cooler rental',
     ],
   },
   {
-    label: 'Drains & Clogs',
-    jobs: ['Unclog drain', 'Unclog toilet', 'Install drain / p-trap', 'Sewer line inspection'],
-  },
-  {
-    label: 'Water Heater',
-    jobs: ['Water heater replacement', 'Water heater repair', 'Tankless water heater install'],
-  },
-  {
-    label: 'Pipes',
-    jobs: ['Pipe burst repair', 'Pipe leak repair', 'Repipe / repiping', 'Frozen pipe thaw'],
-  },
-  {
-    label: 'Appliances',
-    jobs: ['Install garbage disposal', 'Install dishwasher', 'Install washing machine hookup', 'Install outdoor hose bib'],
-  },
-  {
-    label: 'Water Quality & Pressure',
-    jobs: ['Low water pressure fix', 'Install water softener', 'Install water filter / purifier'],
-  },
-  {
-    label: 'Gas Lines',
-    jobs: ['Gas line repair', 'Gas line installation'],
+    label: 'Single-Use / Paper Cartons',
+    description: '500ml paper cartons',
+    jobs: [
+      'Purified water — 500ml cartons',
+      'Aloha Plus — 500ml cartons (micro-clustered alkaline)',
+      'Distilled water — 500ml cartons',
+    ],
   },
   {
     label: 'Other',
@@ -333,7 +323,9 @@ export default function RequestQuotePage() {
                       </div>
                     ) : (
                       <>
-                        <p className="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-2">{cat.label}</p>
+                        <p className="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-0.5">{cat.label}</p>
+                        {cat.description && <p className="text-xs text-gray-500 mb-2">{cat.description}</p>}
+                        {!cat.description && <div className="mb-2" />}
                         <div className="grid grid-cols-2 gap-1.5">
                           {cat.jobs.map(jt => (
                             <button

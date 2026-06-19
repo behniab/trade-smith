@@ -75,18 +75,18 @@ export default async function HomePage() {
           </div>
 
           <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold leading-[1.05] tracking-tight mb-6">
-            Plumbing done
+            Pure water,
             <br />
             <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent">
-              right, priced
+              expertly
             </span>
             <br />
-            upfront.
+            delivered.
           </h1>
 
           <p className="text-lg text-gray-500 mb-2 font-medium">{businessName}</p>
           <p className="text-xl text-gray-400 mb-12 max-w-xl mx-auto leading-relaxed">
-            Describe your job, get a detailed line-item estimate in seconds — no phone tag, no surprises.
+            Certified water treatment, bottled water delivery, and cooler solutions — get an instant quote in seconds.
           </p>
 
           <div className="flex gap-4 justify-center flex-wrap">
@@ -150,8 +150,8 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               { icon: Zap, title: 'Instant Estimates', desc: 'Detailed quotes in seconds, not days', color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-              { icon: Wrench, title: 'All Plumbing Jobs', desc: 'Faucets, water heaters, full remodels, emergencies', color: 'text-blue-400', bg: 'bg-blue-400/10' },
-              { icon: Star, title: 'Quality Guaranteed', desc: 'Licensed, insured pros with a satisfaction promise', color: 'text-purple-400', bg: 'bg-purple-400/10' },
+              { icon: Wrench, title: 'Certified Specialists', desc: 'Water treatment, filtration, and pure water delivery', color: 'text-blue-400', bg: 'bg-blue-400/10' },
+              { icon: Star, title: 'Quality Guaranteed', desc: 'Tested water, proven systems, satisfaction promise', color: 'text-purple-400', bg: 'bg-purple-400/10' },
               { icon: Shield, title: 'Transparent Pricing', desc: 'Line-item breakdowns before any work begins', color: 'text-green-400', bg: 'bg-green-400/10' },
             ].map(({ icon: Icon, title, desc, color, bg }) => (
               <div key={title} className="group">

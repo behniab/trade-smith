@@ -107,7 +107,7 @@ export default function SettingsPage() {
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Settings</h1>
-          <p className="text-gray-500 text-sm">Configure your business rates and information. These values power the AI quote engine.</p>
+          <p className="text-gray-500 text-sm">Configure your business rates and information. These values power the AI estimate engine.</p>
         </div>
         <Link href="/admin/settings/integrations"
           className="flex items-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm px-4 py-2 rounded-lg font-medium transition shadow-sm">
@@ -139,14 +139,14 @@ export default function SettingsPage() {
         <section className="bg-white rounded-xl border p-6 space-y-4">
           <h2 className="font-semibold text-gray-900">Preferred Parts Vendor</h2>
           <p className="text-xs text-gray-500">
-            Search for a local plumbing or hardware supply store. The AI will reference this vendor when generating parts lists for jobs.
+            Search for a local water treatment supply distributor. The AI will reference this vendor when generating parts lists for jobs.
           </p>
           <VendorSearch
             value={preferredVendor}
             onChange={setPreferredVendor}
             serviceArea={settings.service_area}
             label="Vendor"
-            placeholder="Search plumbing/hardware stores…"
+            placeholder="Search water treatment suppliers…"
           />
         </section>
 

@@ -67,7 +67,7 @@ export async function generateQuote(input: QuoteInput): Promise<QuoteResult> {
       answers.map(a => `- ${a.id}: ${a.answer}`).join('\n')
     : ''
 
-  const systemPrompt = `You are an expert plumbing estimator for ${settings.business_name} based in ${settings.service_area}.
+  const systemPrompt = `You are an expert water treatment and bottled water service estimator for ${settings.business_name} based in ${settings.service_area}. The company is a Certified Water Specialist — not a plumber. Services include water treatment systems (softeners, RO, filtration, UV), bottle-less cooler installation, 5-gallon bottled water delivery (Purified, Aloha Plus alkaline, Distilled) at $3.99 delivery fee per stop, cooler rentals, and single-use 500ml paper carton products.
 
 Current rates:
 - Labor: $${settings.labor_rate_per_hour}/hour
@@ -135,7 +135,7 @@ async function tryGetClarifyingQuestions(
   job_type: string | null,
   urgency: UrgencyLevel
 ): Promise<ClarifyingQuestion[] | null> {
-  const systemPrompt = `You are a plumbing estimator's assistant. Your job is to decide whether a customer's job description has enough detail to generate an accurate quote, or whether a few quick questions would significantly improve accuracy.
+  const systemPrompt = `You are an estimator's assistant for a Certified Water Specialist company. Services include water treatment systems, bottle-less cooler installs, 5-gallon bottled water delivery, cooler rentals, and single-use 500ml paper carton products. Your job is to decide whether a customer's job description has enough detail to generate an accurate quote, or whether a few quick questions would significantly improve accuracy.
 
 If the description is already specific enough (e.g. mentions fixture type, location, home size, problem details), respond with:
 { "needs_clarification": false }
@@ -199,19 +199,19 @@ export async function generatePartsList(
 
   const vendorContext = vendor
     ? `The admin's preferred vendor is "${vendor.name}" located at ${vendor.address}${vendor.phone ? `, phone: ${vendor.phone}` : ''}. Source all parts from this vendor by default.`
-    : `No preferred vendor is set. Recommend a local plumbing supply house (Ferguson, Hajoca, Winsupply, or HD Supply) near ${settings.service_area}.`
+    : `No preferred vendor is set. Recommend a local water treatment supply distributor near ${settings.service_area}.`
 
-  const systemPrompt = `You are a plumbing supply procurement assistant for ${settings.business_name} based in ${settings.service_area}.
+  const systemPrompt = `You are a water treatment supply procurement assistant for ${settings.business_name} based in ${settings.service_area}. The company is a Certified Water Specialist — products include water softeners, RO membranes, filtration media, UV lamps, bottle-less cooler parts, and delivery consumables.
 
 ${vendorContext}
 
-Given a plumbing job estimate, generate a detailed parts procurement list.
+Given a water treatment job estimate, generate a detailed parts procurement list.
 
 Return ONLY a JSON object with this structure:
 {
   "preferred_vendor": ${vendor
     ? JSON.stringify({ name: vendor.name, address: vendor.address, phone: vendor.phone ?? '' })
-    : `{ "name": "Ferguson Plumbing Supply", "address": "${settings.service_area} area", "phone": "" }`
+    : `{ "name": "Local Water Treatment Supplier", "address": "${settings.service_area} area", "phone": "" }`
   },
   "items": [
     {
@@ -228,7 +228,7 @@ Return ONLY a JSON object with this structure:
 }
 
 Rules:
-- Use real product names a plumber would search for (include size, material, connection type)
+- Use real product names a water treatment technician would source (include model, media type, size, connection spec)
 - Include ALL parts from the estimate, plus consumables (thread tape, flux, solder, etc.)
 - Quantities should match or slightly exceed the estimate to account for waste
 - Prices reflect trade/contractor pricing (10-20% below retail)
@@ -271,7 +271,7 @@ export async function generateLearning(input: LearningInput): Promise<string> {
   const pct = input.estimated_total > 0 ? ((variance / input.estimated_total) * 100).toFixed(1) : '0'
   const direction = variance > 0 ? 'over' : variance < 0 ? 'under' : 'exact'
 
-  const prompt = `A plumbing job was completed. Compare the estimate vs. actuals and write ONE concise learning insight (2-4 sentences) that will help improve future estimates for similar jobs. Focus on WHY the estimate was off, what was missed or misjudged, and how to correct it next time. Be specific and actionable.
+  const prompt = `A water treatment / water delivery job was completed. Compare the estimate vs. actuals and write ONE concise learning insight (2-4 sentences) that will help improve future estimates for similar jobs. Focus on WHY the estimate was off, what was missed or misjudged, and how to correct it next time. Be specific and actionable.
 
 Job type: ${input.job_type || 'Not specified'}
 Job description: ${input.job_description}

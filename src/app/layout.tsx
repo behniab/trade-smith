@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Aloha Water Company, Inc.',
-  description: 'Professional water treatment services — instant quotes, scheduling, and more',
+  description: 'Certified water treatment, bottled water delivery, and cooler solutions — instant quotes and scheduling.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
