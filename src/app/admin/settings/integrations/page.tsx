@@ -146,6 +146,7 @@ export default function IntegrationsPage() {
           gps_api_key: data.gps_api_key ?? '',
           gps_api_secret: data.gps_api_secret ?? '',
           gps_account_id: data.gps_account_id ?? '',
+          gps_client_id: data.gps_client_id ?? '',
           gps_poll_interval: data.gps_poll_interval ?? 60,
         })
       })
@@ -281,7 +282,7 @@ export default function IntegrationsPage() {
   }
 
   // ---- GPS state ----
-  const [gps, setGps] = useState({ gps_provider: 'zonar', gps_api_key: '', gps_api_secret: '', gps_account_id: '', gps_poll_interval: 60 })
+  const [gps, setGps] = useState({ gps_provider: 'zonar', gps_api_key: '', gps_api_secret: '', gps_account_id: '', gps_client_id: '', gps_poll_interval: 60 })
   const [gpsSaving, setGpsSaving] = useState(false)
   const [gpsSaveMsg, setGpsSaveMsg] = useState<string | null>(null)
   const [gpsTest, setGpsTest] = useState<SyncState>('idle')
@@ -323,7 +324,7 @@ export default function IntegrationsPage() {
 
   const wwConfigured = !!ww.workwave_api_key
   const qbConfigured = !!qb.qb_client_id
-  const gpsConfigured = !!gps.gps_api_key && !!gps.gps_account_id
+  const gpsConfigured = !!gps.gps_api_key && !!gps.gps_account_id && !!gps.gps_client_id
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
@@ -601,11 +602,20 @@ export default function IntegrationsPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-gray-700">Account ID / Username</label>
+            <label className="block text-sm font-medium text-gray-700">Account ID</label>
             <p className="text-xs text-gray-400">Your Zonar customer account ID</p>
             <input type="text" value={gps.gps_account_id}
               onChange={e => setGps(g => ({ ...g, gps_account_id: e.target.value }))}
               placeholder="e.g. 12345"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">Client ID</label>
+            <p className="text-xs text-gray-400">Zonar API client ID (username for Basic Auth)</p>
+            <input type="text" value={gps.gps_client_id}
+              onChange={e => setGps(g => ({ ...g, gps_client_id: e.target.value }))}
+              placeholder="e.g. your-client-id"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
           </div>
 

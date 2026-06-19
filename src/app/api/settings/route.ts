@@ -17,6 +17,7 @@ export async function GET() {
     qb_refresh_token: data.qb_refresh_token ? MASK : '',
     gps_api_key: data.gps_api_key ? MASK : '',
     gps_api_secret: data.gps_api_secret ? MASK : '',
+    gps_client_id: data.gps_client_id ?? '',
   }
   return NextResponse.json({ settings: masked })
 }

@@ -9,7 +9,7 @@ const MASK = '••••••••••••••••'
 
 async function loadConfig() {
   const { data } = await db().from('settings').select(
-    'gps_provider,gps_api_key,gps_api_secret,gps_account_id,gps_poll_interval'
+    'gps_provider,gps_api_key,gps_api_secret,gps_client_id,gps_account_id,gps_poll_interval'
   ).single()
   return data
 }
@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
     const update: Record<string, unknown> = {
       gps_provider: body.gps_provider,
       gps_account_id: body.gps_account_id,
+      gps_client_id: body.gps_client_id ?? null,
       gps_poll_interval: body.gps_poll_interval ?? 60,
     }
     if (body.gps_api_key && body.gps_api_key !== MASK) update.gps_api_key = body.gps_api_key

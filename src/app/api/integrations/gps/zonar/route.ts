@@ -14,19 +14,20 @@ function db() {
 
 async function loadConfig() {
   const { data } = await db().from('settings').select(
-    'gps_api_key,gps_account_id'
+    'gps_api_key,gps_account_id,gps_client_id'
   ).single()
   return data
 }
 
-function basicAuth(accountId: string, apiKey: string) {
-  return 'Basic ' + Buffer.from(`${accountId}:${apiKey}`).toString('base64')
+// Zonar auth: Basic auth using client_id:api_key (username:password)
+function basicAuth(clientId: string, apiKey: string) {
+  return 'Basic ' + Buffer.from(`${clientId}:${apiKey}`).toString('base64')
 }
 
-async function zonarFetch(path: string, accountId: string, apiKey: string) {
+async function zonarFetch(path: string, clientId: string, apiKey: string) {
   const res = await fetch(`${ZONAR_BASE}${path}`, {
     headers: {
-      Authorization: basicAuth(accountId, apiKey),
+      Authorization: basicAuth(clientId, apiKey),
       Accept: 'application/json',
     },
   })
@@ -38,18 +39,18 @@ async function zonarFetch(path: string, accountId: string, apiKey: string) {
 }
 
 // Sync all vehicles + their latest location from Zonar
-async function syncVehicles(accountId: string, apiKey: string) {
+async function syncVehicles(accountId: string, clientId: string, apiKey: string) {
   const results: { vehicle: string; status: string; error?: string }[] = []
 
   // GET /assets — list all tracked assets
-  const assets = await zonarFetch(`/accounts/${accountId}/assets`, accountId, apiKey)
+  const assets = await zonarFetch(`/accounts/${accountId}/assets`, clientId, apiKey)
 
   for (const asset of assets ?? []) {
     try {
       // GET latest location for each asset
       const location = await zonarFetch(
         `/accounts/${accountId}/assets/${asset.id}/locations?limit=1`,
-        accountId, apiKey
+        clientId, apiKey
       )
       const ping = Array.isArray(location) ? location[0] : location
 
@@ -87,13 +88,13 @@ export async function GET(req: NextRequest) {
   const action = req.nextUrl.searchParams.get('action') ?? 'test'
   const cfg = await loadConfig()
 
-  if (!cfg?.gps_api_key || !cfg?.gps_account_id) {
-    return NextResponse.json({ error: 'Zonar API key and account ID are required' }, { status: 400 })
+  if (!cfg?.gps_api_key || !cfg?.gps_account_id || !cfg?.gps_client_id) {
+    return NextResponse.json({ error: 'Zonar requires Account ID, Client ID, and API Key' }, { status: 400 })
   }
 
   if (action === 'test') {
     try {
-      const data = await zonarFetch(`/accounts/${cfg.gps_account_id}/assets?limit=1`, cfg.gps_account_id, cfg.gps_api_key)
+      const data = await zonarFetch(`/accounts/${cfg.gps_account_id}/assets?limit=1`, cfg.gps_client_id, cfg.gps_api_key)
       return NextResponse.json({ ok: true, message: 'Zonar connection successful', sample: data })
     } catch (err: unknown) {
       return NextResponse.json({ ok: false, error: String(err) }, { status: 400 })
@@ -102,7 +103,7 @@ export async function GET(req: NextRequest) {
 
   if (action === 'sync') {
     try {
-      const results = await syncVehicles(cfg.gps_account_id, cfg.gps_api_key)
+      const results = await syncVehicles(cfg.gps_account_id, cfg.gps_client_id, cfg.gps_api_key)
       const errors = results.filter(r => r.status === 'error')
       return NextResponse.json({
         ok: errors.length === 0,
