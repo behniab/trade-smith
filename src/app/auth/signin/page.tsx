@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Wrench } from 'lucide-react'
 import Link from 'next/link'
@@ -9,11 +9,23 @@ import { Suspense } from 'react'
 
 function SignInForm() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const urlError = searchParams.get('error')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(
     urlError === 'unauthorized' ? 'That Google account is not authorized.' : ''
   )
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace('/admin/jobs')
+      else setChecking(false)
+    })
+  }, [router])
+
+  if (checking) return null
 
   async function handleGoogleSignIn() {
     setLoading(true)
