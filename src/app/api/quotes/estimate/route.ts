@@ -30,14 +30,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Description is required' }, { status: 400 })
     }
 
+    const supabase = createAdminClient()
     let settings = DEFAULT_SETTINGS
     try {
-      const supabase = createAdminClient()
       const { data } = await supabase.from('settings').select('*').single()
       if (data) settings = { ...DEFAULT_SETTINGS, ...data }
     } catch {}
 
-    const result = await generateQuote({ description, job_type, urgency, media_urls: [], settings, answers })
+    // Fetch recent learning summaries to inject into the prompt
+    let learnings: string[] = []
+    try {
+      const { data: feedbackRows } = await supabase
+        .from('quote_feedback')
+        .select('ai_learning_summary')
+        .not('ai_learning_summary', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(8)
+      learnings = (feedbackRows ?? []).map((r: { ai_learning_summary: string }) => r.ai_learning_summary).filter(Boolean)
+    } catch {}
+
+    const result = await generateQuote({ description, job_type, urgency, media_urls: [], settings, answers, learnings })
 
     if (result.type === 'questions') {
       return NextResponse.json({ questions: result.questions })

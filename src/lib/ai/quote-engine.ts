@@ -1,6 +1,21 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { AppSettings, QuoteEstimate, PartsListData, UrgencyLevel } from '@/types'
 
+export interface LearningInput {
+  job_description: string
+  job_type: string | null
+  estimate: QuoteEstimate
+  accuracy_rating: number
+  actual_labor_cost: number | null
+  actual_parts_cost: number | null
+  actual_total: number
+  estimated_total: number
+  variance_reason: string | null
+  admin_notes: string | null
+  tags: string[]
+  settings: AppSettings
+}
+
 export interface ClarifyingQuestion {
   id: string
   question: string
@@ -17,6 +32,7 @@ interface QuoteInput {
   media_urls: string[]
   settings: AppSettings
   answers?: QuoteAnswer[]
+  learnings?: string[]  // recent AI learning summaries injected from feedback
 }
 
 export type QuoteResult =
@@ -36,7 +52,7 @@ function urgencyMult(urgency: UrgencyLevel, settings: AppSettings) {
 }
 
 export async function generateQuote(input: QuoteInput): Promise<QuoteResult> {
-  const { description, job_type, urgency, settings, answers } = input
+  const { description, job_type, urgency, settings, answers, learnings } = input
   const client = getClient(settings)
   const multiplier = urgencyMult(urgency, settings)
 
@@ -81,7 +97,11 @@ Rules:
 - subtotal = labor_cost + parts_cost
 - total = subtotal + urgency_surcharge
 - Use realistic prices for ${settings.service_area}
-- notes MUST be newline-separated numbered items. No inline (1) style lists.`
+- notes MUST be newline-separated numbered items. No inline (1) style lists.${
+    learnings?.length
+      ? `\n\nLEARNINGS FROM PAST JOBS — apply these to calibrate your estimate:\n${learnings.map((l, i) => `${i + 1}. ${l}`).join('\n')}`
+      : ''
+  }`
 
   const userMessage = `Job type: ${job_type || 'Not specified'}
 Urgency: ${urgency}
@@ -243,4 +263,35 @@ Parts cost in estimate: $${(estimate.parts_cost ?? 0).toFixed(2)}`,
   } catch {
     return null
   }
+}
+
+export async function generateLearning(input: LearningInput): Promise<string> {
+  const client = getClient(input.settings)
+  const variance = input.actual_total - input.estimated_total
+  const pct = input.estimated_total > 0 ? ((variance / input.estimated_total) * 100).toFixed(1) : '0'
+  const direction = variance > 0 ? 'over' : variance < 0 ? 'under' : 'exact'
+
+  const prompt = `A plumbing job was completed. Compare the estimate vs. actuals and write ONE concise learning insight (2-4 sentences) that will help improve future estimates for similar jobs. Focus on WHY the estimate was off, what was missed or misjudged, and how to correct it next time. Be specific and actionable.
+
+Job type: ${input.job_type || 'Not specified'}
+Job description: ${input.job_description}
+Accuracy rating: ${input.accuracy_rating}/5
+Estimated total: $${input.estimated_total?.toFixed(2)}
+Actual total: $${input.actual_total?.toFixed(2)}
+Variance: ${direction === 'exact' ? 'None' : `$${Math.abs(variance).toFixed(2)} ${direction} by ${Math.abs(parseFloat(pct))}%`}
+${input.actual_labor_cost != null ? `Actual labor: $${input.actual_labor_cost.toFixed(2)}` : ''}
+${input.actual_parts_cost != null ? `Actual parts: $${input.actual_parts_cost.toFixed(2)}` : ''}
+${input.variance_reason ? `Admin noted: ${input.variance_reason}` : ''}
+${input.admin_notes ? `Additional notes: ${input.admin_notes}` : ''}
+${input.tags?.length ? `Tags: ${input.tags.join(', ')}` : ''}
+
+Write the learning insight as a single plain-text paragraph. No JSON, no headers.`
+
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 300,
+    messages: [{ role: 'user', content: prompt }],
+  })
+
+  return response.content[0].type === 'text' ? response.content[0].text.trim() : ''
 }
