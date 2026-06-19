@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Wrench, Upload, Loader2, AlertTriangle, Zap, CalendarCheck } from 'lucide-react'
+import { Wrench, Upload, Loader2, AlertTriangle, Zap, CalendarCheck, ArrowRight, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import { QuoteEstimate, UrgencyLevel, ClarifyingQuestion, PartsListData } from '@/types'
 import { formatCurrency } from '@/lib/utils'
@@ -11,65 +10,33 @@ const JOB_CATEGORIES: { label: string; jobs: string[] }[] = [
   {
     label: 'Faucets & Fixtures',
     jobs: [
-      'Fix leaking faucet',
-      'Replace faucet',
-      'Fix running toilet',
-      'Install toilet',
-      'Replace toilet',
-      'Install bathroom sink',
-      'Install bathtub / shower',
-      'Fix shower pressure',
+      'Fix leaking faucet', 'Replace faucet', 'Fix running toilet', 'Install toilet',
+      'Replace toilet', 'Install bathroom sink', 'Install bathtub / shower', 'Fix shower pressure',
     ],
   },
   {
     label: 'Drains & Clogs',
-    jobs: [
-      'Unclog drain',
-      'Unclog toilet',
-      'Install drain / p-trap',
-      'Sewer line inspection',
-    ],
+    jobs: ['Unclog drain', 'Unclog toilet', 'Install drain / p-trap', 'Sewer line inspection'],
   },
   {
     label: 'Water Heater',
-    jobs: [
-      'Water heater replacement',
-      'Water heater repair',
-      'Tankless water heater install',
-    ],
+    jobs: ['Water heater replacement', 'Water heater repair', 'Tankless water heater install'],
   },
   {
     label: 'Pipes',
-    jobs: [
-      'Pipe burst repair',
-      'Pipe leak repair',
-      'Repipe / repiping',
-      'Frozen pipe thaw',
-    ],
+    jobs: ['Pipe burst repair', 'Pipe leak repair', 'Repipe / repiping', 'Frozen pipe thaw'],
   },
   {
     label: 'Appliances',
-    jobs: [
-      'Install garbage disposal',
-      'Install dishwasher',
-      'Install washing machine hookup',
-      'Install outdoor hose bib',
-    ],
+    jobs: ['Install garbage disposal', 'Install dishwasher', 'Install washing machine hookup', 'Install outdoor hose bib'],
   },
   {
     label: 'Water Quality & Pressure',
-    jobs: [
-      'Low water pressure fix',
-      'Install water softener',
-      'Install water filter / purifier',
-    ],
+    jobs: ['Low water pressure fix', 'Install water softener', 'Install water filter / purifier'],
   },
   {
     label: 'Gas Lines',
-    jobs: [
-      'Gas line repair',
-      'Gas line installation',
-    ],
+    jobs: ['Gas line repair', 'Gas line installation'],
   },
   {
     label: 'Other',
@@ -77,60 +44,47 @@ const JOB_CATEGORIES: { label: string; jobs: string[] }[] = [
   },
 ]
 
-const JOB_TYPES = JOB_CATEGORIES.flatMap(c => c.jobs)
-
-const URGENCY_OPTIONS: { value: UrgencyLevel; label: string; desc: string; icon: React.ReactNode }[] = [
-  { value: 'standard', label: 'Standard', desc: 'Within a few days', icon: <Wrench className="w-4 h-4" /> },
-  { value: 'urgent', label: 'Urgent', desc: 'Within 24 hours', icon: <AlertTriangle className="w-4 h-4" /> },
-  { value: 'emergency', label: 'Emergency', desc: 'Right now', icon: <Zap className="w-4 h-4" /> },
+const URGENCY_OPTIONS: { value: UrgencyLevel; label: string; desc: string; icon: React.ReactNode; accent: string; activeClass: string }[] = [
+  { value: 'standard', label: 'Standard', desc: 'Within a few days', icon: <Wrench className="w-4 h-4" />, accent: 'text-blue-400', activeClass: 'border-blue-500 bg-blue-500/10 text-blue-300' },
+  { value: 'urgent', label: 'Urgent', desc: 'Within 24 hours', icon: <AlertTriangle className="w-4 h-4" />, accent: 'text-orange-400', activeClass: 'border-orange-500 bg-orange-500/10 text-orange-300' },
+  { value: 'emergency', label: 'Emergency', desc: 'Right now', icon: <Zap className="w-4 h-4" />, accent: 'text-red-400', activeClass: 'border-red-500 bg-red-500/10 text-red-300' },
 ]
 
 function parseNoteItems(notes: string): { preamble: string; items: string[] } {
-  // Normalise: replace inline list markers like "(1)" or "1)" with "1."
   const normalised = notes
-    .replace(/\((\d+)\)\s*/g, '$1. ')   // (1) → 1.
-    .replace(/\b(\d+)\)\s*/g, '$1. ')   // 1)  → 1.
+    .replace(/\((\d+)\)\s*/g, '$1. ')
+    .replace(/\b(\d+)\)\s*/g, '$1. ')
 
-  // Try newline-separated first ("1.\nfoo\n2.\nbar")
   const byLine = normalised.split(/\n+/)
-  const lineItems = byLine
-    .map(l => l.replace(/^\d+\.\s*/, '').trim())
-    .filter(Boolean)
+  const lineItems = byLine.map(l => l.replace(/^\d+\.\s*/, '').trim()).filter(Boolean)
 
   if (byLine.some(l => /^\d+\.\s/.test(l.trim())) && lineItems.length > 1) {
-    // Check for a preamble line before the first numbered item
     const firstNumbered = byLine.findIndex(l => /^\d+\.\s/.test(l.trim()))
     const preamble = byLine.slice(0, firstNumbered).join(' ').trim()
     const items = byLine.slice(firstNumbered).map(l => l.replace(/^\d+\.\s*/, '').trim()).filter(Boolean)
     return { preamble, items }
   }
 
-  // Inline list: "Some text: 1. Foo 2. Bar 3. Baz"
-  // Split on the colon/sentence boundary before the first number if present
   const colonSplit = normalised.match(/^(.*?[:\.])\s*(1\.\s.+)$/s)
   const searchText = colonSplit ? colonSplit[2] : normalised
   const preamble = colonSplit ? colonSplit[1].replace(/[:\.]$/, '').trim() : ''
-
   const inlineMatches = [...searchText.matchAll(/\d+\.\s+(.+?)(?=\s+\d+\.\s|$)/gs)]
-  if (inlineMatches.length > 1) {
-    return { preamble, items: inlineMatches.map(m => m[1].trim()) }
-  }
+  if (inlineMatches.length > 1) return { preamble, items: inlineMatches.map(m => m[1].trim()) }
 
   return { preamble: '', items: [] }
 }
 
 function EstimateNotes({ notes }: { notes: string }) {
   const { preamble, items } = parseNoteItems(notes)
-
   if (items.length > 0) {
     return (
-      <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-2">
+      <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 space-y-2">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Notes</p>
-        {preamble && <p className="text-xs text-gray-600 leading-relaxed">{preamble}</p>}
+        {preamble && <p className="text-xs text-gray-400 leading-relaxed">{preamble}</p>}
         <ol className="space-y-0">
           {items.map((item, i) => (
-            <li key={i} className={`flex gap-3 text-xs text-gray-700 py-2 ${i < items.length - 1 ? 'border-b border-gray-200' : ''}`}>
-              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px] mt-0.5">
+            <li key={i} className={`flex gap-3 text-xs text-gray-300 py-2 ${i < items.length - 1 ? 'border-b border-white/5' : ''}`}>
+              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center text-[10px] mt-0.5">
                 {i + 1}
               </span>
               <span className="leading-relaxed">{item}</span>
@@ -140,17 +94,17 @@ function EstimateNotes({ notes }: { notes: string }) {
       </div>
     )
   }
-
   return (
-    <div className="bg-gray-50 rounded-lg px-4 py-3">
+    <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Notes</p>
-      <p className="text-xs text-gray-700 leading-relaxed">{notes}</p>
+      <p className="text-xs text-gray-400 leading-relaxed">{notes}</p>
     </div>
   )
 }
 
+const inputCls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition'
+
 export default function RequestQuotePage() {
-  const router = useRouter()
   const [jobType, setJobType] = useState('')
   const [description, setDescription] = useState('')
   const [urgency, setUrgency] = useState<UrgencyLevel>('standard')
@@ -175,14 +129,11 @@ export default function RequestQuotePage() {
       formData.append('urgency', urgency)
       files.forEach(f => formData.append('media', f))
       if (extraAnswers && Object.keys(extraAnswers).length > 0) {
-        const answerList = Object.entries(extraAnswers).map(([id, answer]) => ({ id, answer }))
-        formData.append('answers', JSON.stringify(answerList))
+        formData.append('answers', JSON.stringify(Object.entries(extraAnswers).map(([id, answer]) => ({ id, answer }))))
       }
-
       const res = await fetch('/api/quotes/estimate', { method: 'POST', body: formData })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to generate estimate')
-
       if (data.questions) {
         setQuestions(data.questions)
         setAnswers({})
@@ -213,7 +164,6 @@ export default function RequestQuotePage() {
     e.preventDefault()
     if (!estimate) return
     setLoading(true)
-
     try {
       const res = await fetch('/api/quotes', {
         method: 'POST',
@@ -233,24 +183,27 @@ export default function RequestQuotePage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl shadow-sm border p-12 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Wrench className="w-8 h-8 text-green-600" />
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[400px] bg-green-600/10 rounded-full blur-[100px]" />
+        </div>
+        <div className="relative bg-gray-900 border border-white/10 rounded-2xl p-12 max-w-md w-full text-center shadow-2xl">
+          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-8 h-8 text-green-400" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Request Submitted!</h2>
-          <p className="text-gray-500 mb-6">Your quote has been received. You can wait for us to contact you, or book a time slot right now.</p>
+          <h2 className="text-2xl font-bold text-white mb-3">Request Submitted!</h2>
+          <p className="text-gray-400 mb-8">Your quote has been received. Book a time slot or we&apos;ll be in touch shortly.</p>
           <div className="flex flex-col gap-3">
             {jobId && (
               <Link
                 href={`/schedule/${jobId}?name=${encodeURIComponent(clientInfo.name)}&email=${encodeURIComponent(clientInfo.email)}`}
-                className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
+                className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-400 text-white px-6 py-3 rounded-xl font-semibold transition shadow-lg shadow-blue-500/20"
               >
                 <CalendarCheck className="w-5 h-5" />
                 Schedule Repair Now
               </Link>
             )}
-            <Link href="/" className="text-blue-600 font-medium hover:underline text-sm">Back to home</Link>
+            <Link href="/" className="text-gray-500 hover:text-gray-300 text-sm transition">Back to home</Link>
           </div>
         </div>
       </div>
@@ -258,30 +211,42 @@ export default function RequestQuotePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="border-b bg-white px-6 py-4 flex items-center gap-3">
-        <Link href="/" className="flex items-center gap-2 font-bold text-blue-600">
-          <Wrench className="w-5 h-5" /> Trade-Smith
+    <div className="min-h-screen bg-gray-950 text-white">
+      {/* Background glow */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-blue-600/10 rounded-full blur-[100px]" />
+      </div>
+
+      {/* Nav */}
+      <nav className="sticky top-0 z-50 px-6 py-4 flex items-center gap-3 backdrop-blur-md bg-gray-950/80 border-b border-white/5">
+        <Link href="/" className="flex items-center gap-2.5 font-bold text-lg">
+          <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
+            <Wrench className="w-3.5 h-3.5 text-white" />
+          </div>
+          <span>Trade<span className="text-blue-400">Smith</span></span>
         </Link>
-        <span className="text-gray-400">/</span>
-        <span className="text-gray-600 text-sm">Request a Quote</span>
+        <span className="text-white/20">/</span>
+        <span className="text-gray-500 text-sm">Request a Quote</span>
       </nav>
 
-      <div className="max-w-2xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Get an Instant Quote</h1>
-        <p className="text-gray-500 mb-8">Describe your job and we&apos;ll generate a cost estimate in seconds.</p>
+      <div className="relative max-w-2xl mx-auto px-4 py-12">
+        <div className="mb-10">
+          <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Get an Instant Quote</h1>
+          <p className="text-gray-500">Describe your job and we&apos;ll generate a detailed cost estimate in seconds.</p>
+        </div>
 
+        {/* Clarifying questions step */}
         {questions && !estimate ? (
           <form onSubmit={handleAnswersSubmit} className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 mb-2">
-              <p className="text-sm font-semibold text-blue-800 mb-0.5">A few quick questions</p>
-              <p className="text-xs text-blue-600">Your answers help us give you a more accurate estimate.</p>
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-5 py-4 mb-2">
+              <p className="text-sm font-semibold text-blue-300 mb-0.5">A few quick questions</p>
+              <p className="text-xs text-blue-400/70">Your answers help us give you a more accurate estimate.</p>
             </div>
 
             {questions.map((q, i) => (
-              <div key={q.id} className="bg-white rounded-xl border p-5 space-y-3">
-                <p className="text-sm font-semibold text-gray-800">
-                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold mr-2">{i + 1}</span>
+              <div key={q.id} className="bg-gray-900 border border-white/10 rounded-xl p-5 space-y-3">
+                <p className="text-sm font-semibold text-white">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-bold mr-2">{i + 1}</span>
                   {q.question}
                 </p>
                 {q.type === 'single_choice' && q.options ? (
@@ -289,55 +254,46 @@ export default function RequestQuotePage() {
                     {q.options.map(opt => (
                       <label key={opt} className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition text-sm ${
                         answers[q.id] === opt
-                          ? 'bg-blue-50 border-blue-400 text-blue-800 font-medium'
-                          : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                          ? 'bg-blue-500/10 border-blue-500 text-blue-300 font-medium'
+                          : 'border-white/10 text-gray-400 hover:border-white/20 hover:text-gray-300'
                       }`}>
-                        <input
-                          type="radio"
-                          name={q.id}
-                          value={opt}
-                          checked={answers[q.id] === opt}
-                          onChange={() => setAnswers(p => ({ ...p, [q.id]: opt }))}
-                          className="accent-blue-600"
-                        />
+                        <input type="radio" name={q.id} value={opt} checked={answers[q.id] === opt}
+                          onChange={() => setAnswers(p => ({ ...p, [q.id]: opt }))} className="accent-blue-500" />
                         {opt}
                       </label>
                     ))}
                   </div>
                 ) : (
-                  <input
-                    type="text"
-                    placeholder="Your answer..."
-                    value={answers[q.id] || ''}
-                    onChange={e => setAnswers(p => ({ ...p, [q.id]: e.target.value }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                  />
+                  <input type="text" placeholder="Your answer..." value={answers[q.id] || ''}
+                    onChange={e => setAnswers(p => ({ ...p, [q.id]: e.target.value }))} className={inputCls} />
                 )}
               </div>
             ))}
 
-            {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-lg">{error}</p>}
+            {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-lg">{error}</p>}
 
             <div className="flex gap-3">
               <button type="button" onClick={() => setQuestions(null)}
-                className="flex-1 border text-gray-600 py-3 rounded-xl font-medium hover:bg-gray-50 transition text-sm">
+                className="flex-1 border border-white/10 text-gray-400 py-3 rounded-xl font-medium hover:bg-white/5 transition text-sm">
                 Back
               </button>
               <button type="submit" disabled={loading}
-                className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition disabled:opacity-60 flex items-center justify-center gap-2 text-sm">
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating estimate...</> : 'Get My Estimate'}
+                className="flex-1 bg-blue-500 hover:bg-blue-400 text-white py-3 rounded-xl font-semibold transition disabled:opacity-50 flex items-center justify-center gap-2 text-sm shadow-lg shadow-blue-500/20">
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</> : <>Get My Estimate <ArrowRight className="w-4 h-4" /></>}
               </button>
             </div>
           </form>
+
         ) : !estimate ? (
-          <form onSubmit={handleGetEstimate} className="space-y-6">
+          /* Quote request form */
+          <form onSubmit={handleGetEstimate} className="space-y-4">
             {/* Job type */}
-            <div className="bg-white rounded-xl border p-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-4">What do you need done?</label>
+            <div className="bg-gray-900 border border-white/10 rounded-xl p-6">
+              <label className="block text-sm font-semibold text-white mb-4">What do you need done?</label>
               <div className="space-y-4 mb-4">
                 {JOB_CATEGORIES.map(cat => (
                   <div key={cat.label}>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">{cat.label}</p>
+                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-2">{cat.label}</p>
                     <div className="grid grid-cols-2 gap-1.5">
                       {cat.jobs.map(jt => (
                         <button
@@ -345,7 +301,9 @@ export default function RequestQuotePage() {
                           type="button"
                           onClick={() => setJobType(jt === 'Other / Describe below' ? '' : jt)}
                           className={`text-left px-3 py-2 rounded-lg text-sm border transition ${
-                            jobType === jt ? 'bg-blue-50 border-blue-400 text-blue-700 font-medium' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                            jobType === jt
+                              ? 'bg-blue-500/10 border-blue-500 text-blue-300 font-medium'
+                              : 'border-white/5 bg-white/3 text-gray-400 hover:border-white/15 hover:text-gray-300'
                           }`}
                         >
                           {jt}
@@ -360,25 +318,21 @@ export default function RequestQuotePage() {
                 onChange={e => setDescription(e.target.value)}
                 placeholder="Describe your issue in detail — the more you share, the more accurate your estimate will be..."
                 rows={4}
-                className="w-full border rounded-lg px-3 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"
+                className={inputCls + ' resize-none'}
               />
             </div>
 
             {/* Urgency */}
-            <div className="bg-white rounded-xl border p-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-3">How soon do you need it?</label>
+            <div className="bg-gray-900 border border-white/10 rounded-xl p-6">
+              <label className="block text-sm font-semibold text-white mb-3">How soon do you need it?</label>
               <div className="grid grid-cols-3 gap-3">
                 {URGENCY_OPTIONS.map(opt => (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => setUrgency(opt.value)}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-lg border text-sm transition ${
-                      urgency === opt.value
-                        ? opt.value === 'emergency' ? 'bg-red-50 border-red-400 text-red-700'
-                          : opt.value === 'urgent' ? 'bg-orange-50 border-orange-400 text-orange-700'
-                          : 'bg-blue-50 border-blue-400 text-blue-700'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border text-sm transition ${
+                      urgency === opt.value ? opt.activeClass : 'border-white/5 text-gray-500 hover:border-white/15 hover:text-gray-400'
                     }`}
                   >
                     {opt.icon}
@@ -389,144 +343,119 @@ export default function RequestQuotePage() {
               </div>
             </div>
 
-            {/* Media upload */}
-            <div className="bg-white rounded-xl border p-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Upload photos or video <span className="text-gray-400 font-normal">(optional, helps accuracy)</span>
+            {/* Upload */}
+            <div className="bg-gray-900 border border-white/10 rounded-xl p-6">
+              <label className="block text-sm font-semibold text-white mb-3">
+                Upload photos <span className="text-gray-600 font-normal">(optional)</span>
               </label>
-              <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 cursor-pointer hover:border-blue-400 transition">
-                <Upload className="w-8 h-8 text-gray-400 mb-2" />
+              <label className="flex flex-col items-center justify-center border border-dashed border-white/10 rounded-xl p-8 cursor-pointer hover:border-blue-500/40 hover:bg-blue-500/5 transition">
+                <Upload className="w-7 h-7 text-gray-600 mb-2" />
                 <span className="text-sm text-gray-500">Click to upload photos or video</span>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*,video/*"
-                  className="hidden"
-                  onChange={e => setFiles(Array.from(e.target.files || []))}
-                />
+                <input type="file" multiple accept="image/*,video/*" className="hidden"
+                  onChange={e => setFiles(Array.from(e.target.files || []))} />
               </label>
               {files.length > 0 && (
-                <p className="text-sm text-gray-500 mt-2">{files.length} file(s) selected</p>
+                <p className="text-xs text-gray-500 mt-2">{files.length} file(s) selected</p>
               )}
             </div>
 
-            {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-lg">{error}</p>}
+            {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-lg">{error}</p>}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating estimate...</> : 'Get My Estimate'}
+            <button type="submit" disabled={loading}
+              className="w-full bg-blue-500 hover:bg-blue-400 text-white py-4 rounded-xl font-semibold text-lg transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20">
+              {loading
+                ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating estimate...</>
+                : <>Get My Estimate <ArrowRight className="w-5 h-5" /></>}
             </button>
           </form>
+
         ) : (
-          <div className="space-y-6">
-            {/* Estimate result */}
-            <div className="bg-white rounded-xl border overflow-hidden">
-              <div className="bg-blue-600 px-6 py-4 text-white">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">Your Estimate</h2>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    estimate.confidence === 'high' ? 'bg-green-400 text-green-900' :
-                    estimate.confidence === 'medium' ? 'bg-yellow-400 text-yellow-900' :
-                    'bg-red-400 text-red-900'
-                  }`}>
-                    {estimate.confidence} confidence
-                  </span>
+          /* Estimate result */
+          <div className="space-y-4">
+            <div className="bg-gray-900 border border-white/10 rounded-xl overflow-hidden">
+              {/* Header */}
+              <div className="px-6 py-5 border-b border-white/10 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Your Estimate</h2>
+                  <p className="text-sm text-gray-400 mt-0.5">{estimate.summary}</p>
                 </div>
-                <p className="text-blue-100 text-sm mt-1">{estimate.summary}</p>
+                <span className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium ${
+                  estimate.confidence === 'high' ? 'bg-green-500/15 text-green-400 border border-green-500/20' :
+                  estimate.confidence === 'medium' ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20' :
+                  'bg-red-500/15 text-red-400 border border-red-500/20'
+                }`}>
+                  {estimate.confidence} confidence
+                </span>
               </div>
 
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-5">
+                {/* Line items table */}
                 <table className="w-full text-sm table-auto">
                   <thead>
-                    <tr className="text-left text-gray-500 border-b">
+                    <tr className="text-left text-gray-600 border-b border-white/5">
                       <th className="pb-2 font-medium">Item</th>
                       <th className="pb-2 font-medium text-right whitespace-nowrap pl-4">Qty</th>
                       <th className="pb-2 font-medium text-right whitespace-nowrap pl-4">Cost</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y">
+                  <tbody className="divide-y divide-white/5">
                     {estimate.line_items.map((item, i) => (
                       <tr key={i}>
-                        <td className="py-2 text-gray-700">{item.description}</td>
-                        <td className="py-2 text-right text-gray-500 whitespace-nowrap pl-4">
+                        <td className="py-2.5 text-gray-300">{item.description}</td>
+                        <td className="py-2.5 text-right text-gray-500 whitespace-nowrap pl-4">
                           {item.quantity} {item.unit === 'each' ? 'ea.' : item.unit === 'hours' ? 'hrs' : item.unit}
                         </td>
-                        <td className="py-2 text-right font-medium text-gray-900 whitespace-nowrap pl-4">{formatCurrency(item.total)}</td>
+                        <td className="py-2.5 text-right font-medium text-white whitespace-nowrap pl-4">{formatCurrency(item.total)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
-                <div className="border-t pt-4 space-y-1 text-sm">
-                  <div className="flex justify-between text-gray-600">
+                {/* Totals */}
+                <div className="border-t border-white/10 pt-4 space-y-1.5 text-sm">
+                  <div className="flex justify-between text-gray-500">
                     <span>Labor ({estimate.labor_hours}h)</span>
                     <span>{formatCurrency(estimate.labor_cost)}</span>
                   </div>
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-gray-500">
                     <span>Parts</span>
                     <span>{formatCurrency(estimate.parts_cost)}</span>
                   </div>
                   {estimate.urgency_surcharge > 0 && (
-                    <div className="flex justify-between text-orange-600">
+                    <div className="flex justify-between text-orange-400">
                       <span>Urgency surcharge</span>
                       <span>+{formatCurrency(estimate.urgency_surcharge)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between font-bold text-lg pt-2 border-t text-gray-900">
-                    <span className="text-black">Total Estimate</span>
-                    <span className="text-blue-600">{formatCurrency(estimate.total)}</span>
+                  <div className="flex justify-between font-bold text-lg pt-3 border-t border-white/10">
+                    <span className="text-white">Total Estimate</span>
+                    <span className="text-blue-400">{formatCurrency(estimate.total)}</span>
                   </div>
                 </div>
 
-                {estimate.notes && (
-                  <EstimateNotes notes={estimate.notes} />
-                )}
+                {estimate.notes && <EstimateNotes notes={estimate.notes} />}
               </div>
             </div>
 
             {/* Book job form */}
-            <form onSubmit={handleBookJob} className="bg-white rounded-xl border p-6 space-y-4">
-              <h3 className="font-semibold text-gray-900">Book this job</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <input
-                  required
-                  placeholder="Your name"
-                  value={clientInfo.name}
-                  onChange={e => setClientInfo(p => ({ ...p, name: e.target.value }))}
-                  className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                />
-                <input
-                  required
-                  type="email"
-                  placeholder="Email address"
-                  value={clientInfo.email}
-                  onChange={e => setClientInfo(p => ({ ...p, email: e.target.value }))}
-                  className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                />
-                <input
-                  placeholder="Phone number"
-                  value={clientInfo.phone}
-                  onChange={e => setClientInfo(p => ({ ...p, phone: e.target.value }))}
-                  className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                />
+            <form onSubmit={handleBookJob} className="bg-gray-900 border border-white/10 rounded-xl p-6 space-y-4">
+              <h3 className="font-semibold text-white">Book this job</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input required placeholder="Your name" value={clientInfo.name}
+                  onChange={e => setClientInfo(p => ({ ...p, name: e.target.value }))} className={inputCls} />
+                <input required type="email" placeholder="Email address" value={clientInfo.email}
+                  onChange={e => setClientInfo(p => ({ ...p, email: e.target.value }))} className={inputCls} />
+                <input placeholder="Phone number" value={clientInfo.phone}
+                  onChange={e => setClientInfo(p => ({ ...p, phone: e.target.value }))} className={inputCls} />
               </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-red-400">{error}</p>}
               <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setEstimate(null)}
-                  className="flex-1 border text-gray-600 py-3 rounded-xl font-medium hover:bg-gray-50 transition"
-                >
+                <button type="button" onClick={() => setEstimate(null)}
+                  className="flex-1 border border-white/10 text-gray-400 py-3 rounded-xl font-medium hover:bg-white/5 transition text-sm">
                   Edit Request
                 </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
-                >
+                <button type="submit" disabled={loading}
+                  className="flex-1 bg-blue-500 hover:bg-blue-400 text-white py-3 rounded-xl font-semibold transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20">
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Submit Request'}
                 </button>
               </div>
