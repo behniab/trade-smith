@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
           .update({ google_refresh_token: data.session.provider_refresh_token })
           .eq('id', 1)
       }
-      return NextResponse.redirect(`${origin}/admin/jobs`)
+      return NextResponse.redirect(`${origin}/admin/dashboard`)
     }
 
     if (!error && data.user?.email !== ADMIN_EMAIL) {

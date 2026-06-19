@@ -20,7 +20,7 @@ function SignInForm() {
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace('/admin/jobs')
+      if (session) router.replace('/admin/dashboard')
       else setChecking(false)
     })
   }, [router])
