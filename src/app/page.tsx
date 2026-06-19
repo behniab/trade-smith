@@ -49,7 +49,7 @@ export default function HomePage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm px-4 py-1.5 rounded-full mb-8 font-medium">
             <Zap className="w-3.5 h-3.5" />
-            AI-Powered Instant Estimates
+            Instant Estimates
           </div>
 
           <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold leading-[1.05] tracking-tight mb-8">
@@ -126,7 +126,7 @@ export default function HomePage() {
           <p className="text-center text-xs uppercase tracking-widest text-gray-600 font-semibold mb-14">Why homeowners choose us</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { icon: Zap, title: 'Instant Estimates', desc: 'AI-powered quotes in seconds, not days', color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+              { icon: Zap, title: 'Instant Estimates', desc: 'Detailed quotes in seconds, not days', color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
               { icon: Wrench, title: 'All Plumbing Jobs', desc: 'Faucets, water heaters, full remodels, emergencies', color: 'text-blue-400', bg: 'bg-blue-400/10' },
               { icon: Star, title: 'Quality Guaranteed', desc: 'Licensed, insured pros with a satisfaction promise', color: 'text-purple-400', bg: 'bg-purple-400/10' },
               { icon: Shield, title: 'Transparent Pricing', desc: 'Line-item breakdowns before any work begins', color: 'text-green-400', bg: 'bg-green-400/10' },
