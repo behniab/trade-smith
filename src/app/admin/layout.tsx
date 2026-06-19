@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Wrench, LayoutDashboard, Briefcase, Users, FileText, Settings, Images, Zap } from 'lucide-react'
+import { Wrench, LayoutDashboard, Briefcase, Users, FileText, Settings, Images, Zap, MapPin } from 'lucide-react'
 
 const NAV = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -7,6 +7,7 @@ const NAV = [
   { href: '/admin/gallery', label: 'Gallery', icon: Images },
   { href: '/admin/crm', label: 'Clients', icon: Users },
   { href: '/admin/invoices', label: 'Clients & Jobs', icon: FileText },
+  { href: '/admin/gps', label: 'GPS Fleet', icon: MapPin },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
   { href: '/admin/settings/integrations', label: 'Integrations', icon: Zap },
 ]

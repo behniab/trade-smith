@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ExternalLink, RefreshCw, CheckCircle2, XCircle, Loader2, ChevronDown, ChevronRight, Zap, BookOpen } from 'lucide-react'
+import { ExternalLink, RefreshCw, CheckCircle2, XCircle, Loader2, ChevronDown, ChevronRight, Zap, BookOpen, MapPin } from 'lucide-react'
 
 interface SyncLog {
   id: string
@@ -141,6 +141,13 @@ export default function IntegrationsPage() {
           qb_environment: data.qb_environment ?? 'sandbox',
           qb_connected: !!(data.qb_access_token && data.qb_access_token !== '••••••••••••••••'),
         })
+        setGps({
+          gps_provider: data.gps_provider ?? 'zonar',
+          gps_api_key: data.gps_api_key ?? '',
+          gps_api_secret: data.gps_api_secret ?? '',
+          gps_account_id: data.gps_account_id ?? '',
+          gps_poll_interval: data.gps_poll_interval ?? 60,
+        })
       })
     loadLogs()
 
@@ -273,8 +280,50 @@ export default function IntegrationsPage() {
     finally { loadLogs(); setTimeout(() => setQbSyncAll('idle'), 4000) }
   }
 
+  // ---- GPS state ----
+  const [gps, setGps] = useState({ gps_provider: 'zonar', gps_api_key: '', gps_api_secret: '', gps_account_id: '', gps_poll_interval: 60 })
+  const [gpsSaving, setGpsSaving] = useState(false)
+  const [gpsSaveMsg, setGpsSaveMsg] = useState<string | null>(null)
+  const [gpsTest, setGpsTest] = useState<SyncState>('idle')
+  const [gpsTestMsg, setGpsTestMsg] = useState<string | null>(null)
+  const [gpsSync, setGpsSync] = useState<SyncState>('idle')
+  const [gpsSyncMsg, setGpsSyncMsg] = useState<string | null>(null)
+  const [showGpsKey, setShowGpsKey] = useState(false)
+
+  async function saveGps() {
+    setGpsSaving(true); setGpsSaveMsg(null)
+    try {
+      const res = await fetch('/api/integrations/gps', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save_config', ...gps }) })
+      if (!res.ok) throw new Error(await res.text())
+      setGpsSaveMsg('Saved')
+    } catch (e) { setGpsSaveMsg(`Error: ${e}`) }
+    finally { setGpsSaving(false); setTimeout(() => setGpsSaveMsg(null), 3000) }
+  }
+
+  async function testGps() {
+    setGpsTest('loading'); setGpsTestMsg(null)
+    try {
+      const res = await fetch(`/api/integrations/gps/${gps.gps_provider}?action=test`)
+      const data = await res.json()
+      if (!data.ok) throw new Error(data.error)
+      setGpsTest('ok'); setGpsTestMsg(data.message ?? 'Connection successful')
+    } catch (e) { setGpsTest('error'); setGpsTestMsg(String(e)) }
+  }
+
+  async function syncGps() {
+    setGpsSync('loading'); setGpsSyncMsg(null)
+    try {
+      const res = await fetch(`/api/integrations/gps/${gps.gps_provider}?action=sync`)
+      const data = await res.json()
+      if (!data.ok && data.errors > 0) throw new Error(`${data.errors} vehicles failed`)
+      setGpsSync('ok'); setGpsSyncMsg(`Synced ${data.synced ?? 0} vehicle${data.synced !== 1 ? 's' : ''}`)
+    } catch (e) { setGpsSync('error'); setGpsSyncMsg(String(e)) }
+    finally { setTimeout(() => setGpsSync('idle'), 5000) }
+  }
+
   const wwConfigured = !!ww.workwave_api_key
   const qbConfigured = !!qb.qb_client_id
+  const gpsConfigured = !!gps.gps_api_key && !!gps.gps_account_id
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
@@ -517,6 +566,118 @@ export default function IntegrationsPage() {
               Sync Log ({qbLogs.length})
             </button>
             {showQbLogs && <LogTable logs={qbLogs} />}
+          </div>
+        )}
+      </div>
+
+      {/* ---- GPS Tracking ---- */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
+              <MapPin className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-gray-900">GPS Fleet Tracking</h2>
+              <p className="text-xs text-gray-400">Track vehicles in real-time, view trips and history</p>
+            </div>
+          </div>
+          <a href="/admin/gps" className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">
+            Open Dashboard →
+          </a>
+        </div>
+
+        <div className="px-6 py-6 space-y-5">
+          {/* Provider selector */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">GPS Provider</label>
+            <select value={gps.gps_provider} onChange={e => setGps(g => ({ ...g, gps_provider: e.target.value }))}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="zonar">Zonar (GTC API)</option>
+              <option value="samsara">Samsara (coming soon)</option>
+              <option value="geotab">Geotab (coming soon)</option>
+              <option value="verizon">Verizon Connect (coming soon)</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">Account ID / Username</label>
+            <p className="text-xs text-gray-400">Your Zonar customer account ID</p>
+            <input type="text" value={gps.gps_account_id}
+              onChange={e => setGps(g => ({ ...g, gps_account_id: e.target.value }))}
+              placeholder="e.g. 12345"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">API Key / Password</label>
+            <p className="text-xs text-gray-400">Zonar GTC API credentials</p>
+            <div className="flex gap-2">
+              <input type={showGpsKey ? 'text' : 'password'} value={gps.gps_api_key}
+                onChange={e => setGps(g => ({ ...g, gps_api_key: e.target.value }))}
+                placeholder="••••••••••••••••"
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              <button type="button" onClick={() => setShowGpsKey(s => !s)}
+                className="px-3 py-2 border border-gray-200 rounded-lg text-xs text-gray-500 hover:bg-gray-50">
+                {showGpsKey ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">Poll Interval (seconds)</label>
+            <input type="number" value={gps.gps_poll_interval} min={30} max={3600}
+              onChange={e => setGps(g => ({ ...g, gps_poll_interval: parseInt(e.target.value) || 60 }))}
+              className="w-32 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+
+          <div className="flex items-center gap-3 pt-1">
+            <button onClick={saveGps} disabled={gpsSaving}
+              className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition disabled:opacity-50">
+              {gpsSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Save
+            </button>
+            <button onClick={testGps} disabled={gpsTest === 'loading' || !gpsConfigured}
+              className={`flex items-center gap-2 text-sm px-4 py-2 rounded-lg font-medium border transition disabled:opacity-40 ${
+                gpsTest === 'ok'    ? 'bg-green-50 border-green-200 text-green-700' :
+                gpsTest === 'error' ? 'bg-red-50 border-red-200 text-red-700' :
+                'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+              }`}>
+              {gpsTest === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              Test Connection
+            </button>
+            {gpsSaveMsg && <span className="text-sm text-gray-500">{gpsSaveMsg}</span>}
+          </div>
+
+          {gpsTestMsg && (
+            <div className={`flex items-start gap-2 text-sm px-3 py-2 rounded-lg ${gpsTest === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              {gpsTest === 'ok' ? <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" /> : <XCircle className="w-4 h-4 mt-0.5 shrink-0" />}
+              {gpsTestMsg}
+            </div>
+          )}
+        </div>
+
+        {gpsConfigured && (
+          <div className="border-t border-gray-100 px-6 py-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-gray-900">Sync Vehicles</h3>
+              <button onClick={syncGps} disabled={gpsSync === 'loading'}
+                className={`flex items-center gap-2 text-sm px-4 py-2 rounded-lg font-medium transition ${
+                  gpsSync === 'ok'    ? 'bg-green-500 text-white' :
+                  gpsSync === 'error' ? 'bg-red-500 text-white' :
+                  'bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-50'
+                }`}>
+                {gpsSync === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" /> :
+                 gpsSync === 'ok'      ? <CheckCircle2 className="w-4 h-4" /> :
+                 gpsSync === 'error'   ? <XCircle className="w-4 h-4" /> :
+                 <RefreshCw className="w-4 h-4" />}
+                {gpsSync === 'ok' ? 'Synced' : gpsSync === 'error' ? 'Failed' : 'Sync Now'}
+              </button>
+            </div>
+            {gpsSyncMsg && (
+              <p className={`text-sm ${gpsSync === 'ok' ? 'text-green-600' : 'text-red-600'}`}>{gpsSyncMsg}</p>
+            )}
+            <p className="text-xs text-gray-400">Pulls latest location for all vehicles from {gps.gps_provider === 'zonar' ? 'Zonar GTC' : gps.gps_provider}. View live map and trip history in the GPS Dashboard.</p>
           </div>
         )}
       </div>
