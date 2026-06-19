@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { Loader2, Save, KeyRound, CheckCircle2, XCircle } from 'lucide-react'
-import { AppSettings } from '@/types'
+import { AppSettings, VendorInfo } from '@/types'
 import AddressInput from '@/components/AddressInput'
+import VendorSearch from '@/components/VendorSearch'
 
 const MASK = '••••••••••••••••'
 
@@ -27,6 +28,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [preferredVendor, setPreferredVendor] = useState<VendorInfo | null>(null)
   const [anthropicKey, setAnthropicKey] = useState('')
   const [keyIsSet, setKeyIsSet] = useState(false)
   const [savingKey, setSavingKey] = useState(false)
@@ -40,6 +42,7 @@ export default function SettingsPage() {
       if (d.settings) {
         setSettings({ ...DEFAULT, ...d.settings, anthropic_api_key: '' })
         setKeyIsSet(d.settings.anthropic_api_key === MASK)
+        setPreferredVendor(d.settings.preferred_vendor ?? null)
       }
       setLoading(false)
     })
@@ -53,7 +56,11 @@ export default function SettingsPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) })
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...settings, preferred_vendor: preferredVendor }),
+    })
     setSaving(false)
     setSaved(true)
   }
@@ -116,6 +123,21 @@ export default function SettingsPage() {
           </div>
           <Field label="Service Area (city/state)" value={settings.service_area} onChange={v => set('service_area', v)} placeholder="e.g. Phoenix, AZ" />
           <Field label="License Number" value={settings.license_number || ''} onChange={v => set('license_number', v || null)} required={false} />
+        </section>
+
+        {/* Preferred Vendor */}
+        <section className="bg-white rounded-xl border p-6 space-y-4">
+          <h2 className="font-semibold text-gray-900">Preferred Parts Vendor</h2>
+          <p className="text-xs text-gray-500">
+            Search for a local plumbing or hardware supply store. The AI will reference this vendor when generating parts lists for jobs.
+          </p>
+          <VendorSearch
+            value={preferredVendor}
+            onChange={setPreferredVendor}
+            serviceArea={settings.service_area}
+            label="Vendor"
+            placeholder="Search plumbing/hardware stores…"
+          />
         </section>
 
         {/* Pricing */}

@@ -103,6 +103,12 @@ export interface JobTemplate {
   category: string
 }
 
+export interface VendorInfo {
+  name: string
+  address: string
+  phone: string
+}
+
 export interface PartItem {
   name: string
   quantity: number
@@ -110,12 +116,11 @@ export interface PartItem {
   estimated_unit_cost: number
   estimated_total: number
   notes?: string
+  vendor?: VendorInfo    // per-item override (null = use preferred vendor)
 }
 
 export interface PartsListData {
-  supplier_name: string
-  supplier_location: string
-  backup_supplier: string
+  preferred_vendor: VendorInfo | null
   items: PartItem[]
   total_parts_cost: number
   procurement_notes: string
@@ -141,4 +146,5 @@ export interface AppSettings {
   license_number: string | null
   stripe_enabled: boolean
   anthropic_api_key?: string | null
+  preferred_vendor?: VendorInfo | null
 }

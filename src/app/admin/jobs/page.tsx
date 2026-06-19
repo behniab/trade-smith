@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { ChevronLeft, ChevronRight, Loader2, ExternalLink, ChevronDown, ChevronUp, Package } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, ExternalLink, ChevronDown, ChevronUp, Package, AlertCircle, MapPin, Phone } from 'lucide-react'
 import Link from 'next/link'
 import { formatCurrency, JOB_STATUS_COLORS, JOB_STATUS_LABELS } from '@/lib/utils'
 import { CalEvent } from '@/lib/google-calendar'
-import { PartsListData } from '@/types'
+import { PartsListData, VendorInfo } from '@/types'
 
 const HOURS = Array.from({ length: 11 }, (_, i) => i + 7) // 7am–5pm
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -34,6 +34,14 @@ interface Job {
   quotes: { estimate: { total: number }; parts_list: PartsListData | null }[] | null
 }
 
+// Per-item unavailability + alternative vendor state (keyed by "jobId-itemIndex")
+type AltState = {
+  unavailable: boolean
+  searching: boolean
+  alternatives: VendorInfo[]
+  selected: VendorInfo | null
+}
+
 export default function AdminJobsPage() {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()))
   const [events, setEvents] = useState<CalEvent[]>([])
@@ -41,7 +49,38 @@ export default function AdminJobsPage() {
   const [eventsError, setEventsError] = useState('')
   const [jobs, setJobs] = useState<Job[]>([])
   const [expandedJob, setExpandedJob] = useState<string | null>(null)
+  const [serviceArea, setServiceArea] = useState('')
+  const [itemStates, setItemStates] = useState<Record<string, AltState>>({})
   const setupDone = useRef(false)
+
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then(d => {
+      if (d.settings?.service_area) setServiceArea(d.settings.service_area)
+    })
+  }, [])
+
+  function getItemKey(jobId: string, idx: number) { return `${jobId}-${idx}` }
+
+  function getItemState(jobId: string, idx: number): AltState {
+    return itemStates[getItemKey(jobId, idx)] ?? { unavailable: false, searching: false, alternatives: [], selected: null }
+  }
+
+  function setItemState(jobId: string, idx: number, patch: Partial<AltState>) {
+    const key = getItemKey(jobId, idx)
+    setItemStates(prev => ({ ...prev, [key]: { ...getItemState(jobId, idx), ...patch } }))
+  }
+
+  async function findAlternatives(jobId: string, idx: number, partName: string) {
+    setItemState(jobId, idx, { searching: true, alternatives: [] })
+    try {
+      const params = new URLSearchParams({ q: partName, area: serviceArea })
+      const res = await fetch(`/api/vendors/search?${params}`)
+      const data = await res.json()
+      setItemState(jobId, idx, { searching: false, alternatives: data.vendors ?? [] })
+    } catch {
+      setItemState(jobId, idx, { searching: false, alternatives: [] })
+    }
+  }
 
   // weekStart timestamp used as a stable primitive dependency
   const weekStartTs = weekStart.getTime()
@@ -272,16 +311,23 @@ export default function AdminJobsPage() {
                           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Parts Order</p>
                         </div>
                         <div className="bg-white rounded-lg border overflow-hidden">
-                          {/* Supplier header */}
-                          <div className="px-4 py-3 bg-blue-50 border-b flex flex-wrap items-center justify-between gap-2">
-                            <div>
-                              <p className="text-sm font-semibold text-blue-900">{partsList.supplier_name}</p>
-                              <p className="text-xs text-blue-700">{partsList.supplier_location}</p>
+                          {/* Vendor header */}
+                          {partsList.preferred_vendor && (
+                            <div className="px-4 py-3 bg-blue-50 border-b">
+                              <p className="text-xs text-blue-500 font-medium uppercase tracking-wide mb-1">Preferred Vendor</p>
+                              <p className="text-sm font-semibold text-blue-900">{partsList.preferred_vendor.name}</p>
+                              {partsList.preferred_vendor.address && (
+                                <p className="flex items-center gap-1 text-xs text-blue-700 mt-0.5">
+                                  <MapPin className="w-3 h-3 shrink-0" />{partsList.preferred_vendor.address}
+                                </p>
+                              )}
+                              {partsList.preferred_vendor.phone && (
+                                <p className="flex items-center gap-1 text-xs text-blue-700 mt-0.5">
+                                  <Phone className="w-3 h-3 shrink-0" />{partsList.preferred_vendor.phone}
+                                </p>
+                              )}
                             </div>
-                            <div className="text-right">
-                              <p className="text-xs text-blue-700">Backup: {partsList.backup_supplier}</p>
-                            </div>
-                          </div>
+                          )}
                           {/* Parts table */}
                           <table className="w-full text-sm">
                             <thead>
@@ -290,24 +336,90 @@ export default function AdminJobsPage() {
                                 <th className="px-4 py-2 font-medium text-right whitespace-nowrap">Qty</th>
                                 <th className="px-4 py-2 font-medium text-right whitespace-nowrap">Unit $</th>
                                 <th className="px-4 py-2 font-medium text-right whitespace-nowrap">Total</th>
+                                <th className="px-4 py-2 font-medium whitespace-nowrap">Availability</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y">
-                              {partsList.items.map((item, i) => (
-                                <tr key={i}>
-                                  <td className="px-4 py-2.5">
-                                    <p className="text-gray-800 font-medium">{item.name}</p>
-                                    {item.notes && <p className="text-xs text-gray-400 mt-0.5">{item.notes}</p>}
-                                  </td>
-                                  <td className="px-4 py-2.5 text-right text-gray-600 whitespace-nowrap">{item.quantity} {item.unit}</td>
-                                  <td className="px-4 py-2.5 text-right text-gray-600 whitespace-nowrap">{formatCurrency(item.estimated_unit_cost)}</td>
-                                  <td className="px-4 py-2.5 text-right font-medium text-gray-900 whitespace-nowrap">{formatCurrency(item.estimated_total)}</td>
-                                </tr>
-                              ))}
+                              {partsList.items.map((item, i) => {
+                                const istate = getItemState(job.id, i)
+                                const displayVendor = istate.selected ?? (item.vendor ?? partsList.preferred_vendor)
+                                return (
+                                  <tr key={i} className={istate.unavailable ? 'bg-red-50' : ''}>
+                                    <td className="px-4 py-2.5">
+                                      <p className="text-gray-800 font-medium">{item.name}</p>
+                                      {item.notes && <p className="text-xs text-gray-400 mt-0.5">{item.notes}</p>}
+                                      {/* Per-item vendor (if override) */}
+                                      {item.vendor && !istate.selected && (
+                                        <p className="text-xs text-indigo-600 mt-0.5 font-medium">{item.vendor.name}</p>
+                                      )}
+                                      {/* Selected alternative vendor */}
+                                      {istate.selected && (
+                                        <div className="mt-1 text-xs text-green-700 bg-green-50 rounded px-2 py-1">
+                                          <span className="font-medium">Alt: {istate.selected.name}</span>
+                                          {istate.selected.address && <span className="text-green-600"> · {istate.selected.address}</span>}
+                                          {istate.selected.phone && <span className="text-green-600"> · {istate.selected.phone}</span>}
+                                          <button
+                                            type="button"
+                                            onClick={() => setItemState(job.id, i, { selected: null, alternatives: [], unavailable: false })}
+                                            className="ml-2 underline text-green-600 hover:text-green-800"
+                                          >clear</button>
+                                        </div>
+                                      )}
+                                      {/* Alternative vendor results */}
+                                      {istate.unavailable && !istate.selected && (
+                                        <div className="mt-2">
+                                          {istate.searching && (
+                                            <p className="text-xs text-gray-500 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" />Searching nearby vendors…</p>
+                                          )}
+                                          {!istate.searching && istate.alternatives.length === 0 && (
+                                            <p className="text-xs text-gray-400">No alternative vendors found nearby.</p>
+                                          )}
+                                          {!istate.searching && istate.alternatives.length > 0 && (
+                                            <div className="space-y-1 mt-1">
+                                              <p className="text-xs font-medium text-gray-600">Select alternative vendor:</p>
+                                              {istate.alternatives.map((alt, ai) => (
+                                                <button
+                                                  key={ai}
+                                                  type="button"
+                                                  onClick={() => setItemState(job.id, i, { selected: alt, unavailable: false })}
+                                                  className="w-full text-left bg-white border rounded px-2 py-1.5 hover:bg-blue-50 transition"
+                                                >
+                                                  <p className="text-xs font-medium text-gray-800">{alt.name}</p>
+                                                  {alt.address && <p className="text-xs text-gray-500 flex items-center gap-1"><MapPin className="w-2.5 h-2.5 shrink-0" />{alt.address}</p>}
+                                                  {alt.phone && <p className="text-xs text-gray-500 flex items-center gap-1"><Phone className="w-2.5 h-2.5 shrink-0" />{alt.phone}</p>}
+                                                </button>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-2.5 text-right text-gray-600 whitespace-nowrap align-top">{item.quantity} {item.unit}</td>
+                                    <td className="px-4 py-2.5 text-right text-gray-600 whitespace-nowrap align-top">{formatCurrency(item.estimated_unit_cost)}</td>
+                                    <td className="px-4 py-2.5 text-right font-medium text-gray-900 whitespace-nowrap align-top">{formatCurrency(item.estimated_total)}</td>
+                                    <td className="px-4 py-2.5 align-top">
+                                      {!istate.selected && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const nowUnavailable = !istate.unavailable
+                                            setItemState(job.id, i, { unavailable: nowUnavailable, alternatives: [] })
+                                            if (nowUnavailable) findAlternatives(job.id, i, item.name)
+                                          }}
+                                          className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full border transition whitespace-nowrap ${istate.unavailable ? 'bg-red-100 border-red-300 text-red-700' : 'border-gray-300 text-gray-500 hover:border-red-300 hover:text-red-600'}`}
+                                        >
+                                          <AlertCircle className="w-3 h-3 shrink-0" />
+                                          {istate.unavailable ? 'Unavailable' : 'Mark unavailable'}
+                                        </button>
+                                      )}
+                                    </td>
+                                  </tr>
+                                )
+                              })}
                             </tbody>
                             <tfoot>
                               <tr className="border-t bg-gray-50">
-                                <td colSpan={3} className="px-4 py-2.5 text-sm font-semibold text-gray-700 text-right">Estimated Parts Total</td>
+                                <td colSpan={4} className="px-4 py-2.5 text-sm font-semibold text-gray-700 text-right">Estimated Parts Total</td>
                                 <td className="px-4 py-2.5 text-right font-bold text-gray-900 whitespace-nowrap">{formatCurrency(partsList.total_parts_cost)}</td>
                               </tr>
                             </tfoot>

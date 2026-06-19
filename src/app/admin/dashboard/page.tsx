@@ -48,7 +48,7 @@ export default async function DashboardPage() {
         </div>
         <div className="divide-y">
           {recentJobs?.map(job => (
-            <Link key={job.id} href={`/admin/jobs/${job.id}`} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition">
+            <Link key={job.id} href="/admin/jobs" className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition">
               <div>
                 <p className="text-sm font-medium text-gray-900">{job.title}</p>
                 <p className="text-xs text-gray-500">{(job.clients as { name: string } | null)?.name} · {formatDate(job.created_at)}</p>

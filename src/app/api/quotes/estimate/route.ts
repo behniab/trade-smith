@@ -43,8 +43,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ questions: result.questions })
     }
 
-    // Generate parts list in parallel — admin-only, not shown to customer
-    const parts_list = await generatePartsList(result.estimate, description, job_type, settings).catch(() => null)
+    // Generate parts list — admin-only, not shown to customer
+    let parts_list = null
+    try {
+      parts_list = await generatePartsList(result.estimate, description, job_type, settings)
+    } catch (partsErr) {
+      console.error('generatePartsList failed:', partsErr)
+    }
 
     return NextResponse.json({ estimate: result.estimate, parts_list })
   } catch (err: unknown) {

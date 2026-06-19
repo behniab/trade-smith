@@ -175,24 +175,32 @@ export async function generatePartsList(
   settings: AppSettings
 ): Promise<PartsListData | null> {
   const client = getClient(settings)
+  const vendor = settings.preferred_vendor
+
+  const vendorContext = vendor
+    ? `The admin's preferred vendor is "${vendor.name}" located at ${vendor.address}${vendor.phone ? `, phone: ${vendor.phone}` : ''}. Source all parts from this vendor by default.`
+    : `No preferred vendor is set. Recommend a local plumbing supply house (Ferguson, Hajoca, Winsupply, or HD Supply) near ${settings.service_area}.`
 
   const systemPrompt = `You are a plumbing supply procurement assistant for ${settings.business_name} based in ${settings.service_area}.
 
-Given a plumbing job estimate, generate a detailed parts procurement list that a plumber can use to order materials from a local supplier.
+${vendorContext}
+
+Given a plumbing job estimate, generate a detailed parts procurement list.
 
 Return ONLY a JSON object with this structure:
 {
-  "supplier_name": "Primary recommended plumbing supply house name (e.g. Ferguson Plumbing Supply, Hajoca, Winsupply, HD Supply)",
-  "supplier_location": "City/region, e.g. '${settings.service_area} area'",
-  "backup_supplier": "Secondary option (e.g. 'Home Depot Pro / Lowe's Pro')",
+  "preferred_vendor": ${vendor
+    ? JSON.stringify({ name: vendor.name, address: vendor.address, phone: vendor.phone ?? '' })
+    : `{ "name": "Ferguson Plumbing Supply", "address": "${settings.service_area} area", "phone": "" }`
+  },
   "items": [
     {
-      "name": "Specific product name with size/spec (e.g. 'SharkBite 1/2\" Push-to-Connect Coupling')",
+      "name": "Specific product name with size/spec (e.g. 'SharkBite 1/2\\\" Push-to-Connect Coupling')",
       "quantity": 2,
       "unit": "ea.",
       "estimated_unit_cost": 8.99,
       "estimated_total": 17.98,
-      "notes": "Optional: brand alternative or stocking note"
+      "notes": "Optional: brand alternative or special order note"
     }
   ],
   "total_parts_cost": 0.00,
@@ -201,11 +209,10 @@ Return ONLY a JSON object with this structure:
 
 Rules:
 - Use real product names a plumber would search for (include size, material, connection type)
-- Recommend a plumbing supply house as primary (not a big-box store) — they stock commercial-grade parts
-- Include ALL parts from the estimate line items, plus any consumables (thread tape, flux, solder, etc.)
+- Include ALL parts from the estimate, plus consumables (thread tape, flux, solder, etc.)
 - Quantities should match or slightly exceed the estimate to account for waste
-- Prices should reflect trade/contractor pricing (typically 10-20% below retail)
-- total_parts_cost must equal the sum of all item estimated_totals`
+- Prices reflect trade/contractor pricing (10-20% below retail)
+- total_parts_cost must equal the sum of all estimated_totals`
 
   const lineItemsSummary = estimate.line_items
     .map(i => `- ${i.description}: qty ${i.quantity} ${i.unit}`)
@@ -213,7 +220,7 @@ Rules:
 
   const response = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
+    max_tokens: 4096,
     system: systemPrompt,
     messages: [{
       role: 'user',
@@ -223,7 +230,7 @@ Description: ${jobDescription}
 Estimate line items:
 ${lineItemsSummary}
 
-Parts cost in estimate: $${estimate.parts_cost.toFixed(2)}`,
+Parts cost in estimate: $${(estimate.parts_cost ?? 0).toFixed(2)}`,
     }],
   })
 
