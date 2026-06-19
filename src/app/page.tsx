@@ -1,7 +1,21 @@
 import Link from 'next/link'
-import { Wrench, Clock, Star, Shield, Settings, ArrowRight, CheckCircle, Zap, Phone } from 'lucide-react'
+import { Wrench, Star, Shield, Settings, ArrowRight, CheckCircle, Zap, Phone, MapPin } from 'lucide-react'
+import { createAdminClient } from '@/lib/supabase/admin'
 
-export default function HomePage() {
+async function getSettings() {
+  try {
+    const supabase = createAdminClient()
+    const { data } = await supabase.from('settings').select('business_name, service_area, business_phone').single()
+    return data
+  } catch { return null }
+}
+
+export default async function HomePage() {
+  const settings = await getSettings()
+  const businessName = settings?.business_name || 'Trade-Smith'
+  const serviceArea = settings?.service_area || ''
+  const phone = settings?.business_phone || ''
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-950 text-white overflow-x-hidden">
 
@@ -11,7 +25,7 @@ export default function HomePage() {
           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
             <Wrench className="w-4 h-4 text-white" />
           </div>
-          <span className="text-white">Trade<span className="text-blue-400">Smith</span></span>
+          <span className="text-white">{businessName}</span>
         </div>
         <div className="flex items-center gap-6">
           <Link href="/gallery" className="text-sm text-gray-400 hover:text-white transition">Gallery</Link>
@@ -46,13 +60,21 @@ export default function HomePage() {
         />
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm px-4 py-1.5 rounded-full mb-8 font-medium">
-            <Zap className="w-3.5 h-3.5" />
-            Instant Estimates
+          {/* Business + market badge */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+            <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm px-4 py-1.5 rounded-full font-medium">
+              <Zap className="w-3.5 h-3.5" />
+              Instant Estimates
+            </div>
+            {serviceArea && (
+              <div className="inline-flex items-center gap-1.5 bg-white/5 border border-white/10 text-gray-400 text-sm px-4 py-1.5 rounded-full">
+                <MapPin className="w-3.5 h-3.5 text-gray-500" />
+                {serviceArea}
+              </div>
+            )}
           </div>
 
-          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold leading-[1.05] tracking-tight mb-8">
+          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold leading-[1.05] tracking-tight mb-6">
             Plumbing done
             <br />
             <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent">
@@ -62,6 +84,7 @@ export default function HomePage() {
             upfront.
           </h1>
 
+          <p className="text-lg text-gray-500 mb-2 font-medium">{businessName}</p>
           <p className="text-xl text-gray-400 mb-12 max-w-xl mx-auto leading-relaxed">
             Describe your job, get a detailed line-item estimate in seconds — no phone tag, no surprises.
           </p>
@@ -187,19 +210,21 @@ export default function HomePage() {
               Request a Quote
               <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
-            <a
-              href="tel:+18005551234"
-              className="flex items-center gap-2 border border-white/10 text-gray-300 hover:text-white hover:border-white/20 px-8 py-4 rounded-xl text-lg font-semibold transition"
-            >
-              <Phone className="w-5 h-5" />
-              Call Us
-            </a>
+            {phone && (
+              <a
+                href={`tel:${phone.replace(/\D/g, '')}`}
+                className="flex items-center gap-2 border border-white/10 text-gray-300 hover:text-white hover:border-white/20 px-8 py-4 rounded-xl text-lg font-semibold transition"
+              >
+                <Phone className="w-5 h-5" />
+                {phone}
+              </a>
+            )}
           </div>
         </div>
       </section>
 
       <footer className="border-t border-white/5 px-6 py-6 text-center text-sm text-gray-600">
-        © {new Date().getFullYear()} Trade-Smith. All rights reserved.
+        © {new Date().getFullYear()} {businessName}. All rights reserved.
       </footer>
     </div>
   )
