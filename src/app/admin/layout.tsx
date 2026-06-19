@@ -1,9 +1,10 @@
 import Link from 'next/link'
-import { Wrench, LayoutDashboard, Briefcase, Users, FileText, Settings } from 'lucide-react'
+import { Wrench, LayoutDashboard, Briefcase, Users, FileText, Settings, Images } from 'lucide-react'
 
 const NAV = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/jobs', label: 'Jobs', icon: Briefcase },
+  { href: '/admin/gallery', label: 'Gallery', icon: Images },
   { href: '/admin/crm', label: 'Clients', icon: Users },
   { href: '/admin/invoices', label: 'Invoices', icon: FileText },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
