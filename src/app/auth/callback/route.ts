@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const ADMIN_EMAIL = 'behniab@gmail.com'
+const ADMIN_EMAILS = new Set(['behniab@gmail.com', 'dannymgabe@gmail.com'])
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
   if (error) return failRedirect('callback_failed')
 
-  if (data.user?.email !== ADMIN_EMAIL) {
+  if (!ADMIN_EMAILS.has(data.user?.email ?? '')) {
     await supabase.auth.signOut()
     return failRedirect('unauthorized')
   }

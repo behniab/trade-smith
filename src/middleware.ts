@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-const ADMIN_EMAIL = 'behniab@gmail.com'
+const ADMIN_EMAILS = new Set(['behniab@gmail.com', 'dannymgabe@gmail.com'])
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user || user.email !== ADMIN_EMAIL) {
+  if (!user || !ADMIN_EMAILS.has(user.email ?? '')) {
     return NextResponse.redirect(new URL('/auth/signin', request.url))
   }
 
