@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Wrench, LayoutDashboard, Briefcase, Users, FileText, Settings, Images } from 'lucide-react'
+import { Wrench, LayoutDashboard, Briefcase, Users, FileText, Settings, Images, Zap } from 'lucide-react'
 
 const NAV = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -8,6 +8,7 @@ const NAV = [
   { href: '/admin/crm', label: 'Clients', icon: Users },
   { href: '/admin/invoices', label: 'Clients & Jobs', icon: FileText },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
+  { href: '/admin/settings/integrations', label: 'Integrations', icon: Zap },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

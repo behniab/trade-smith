@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2, Save, KeyRound, CheckCircle2, XCircle } from 'lucide-react'
+import Link from 'next/link'
+import { Loader2, Save, KeyRound, CheckCircle2, XCircle, Zap } from 'lucide-react'
 import { AppSettings, VendorInfo } from '@/types'
 import AddressInput from '@/components/AddressInput'
 import VendorSearch from '@/components/VendorSearch'
@@ -103,8 +104,17 @@ export default function SettingsPage() {
 
   return (
     <div className="p-8 max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Settings</h1>
-      <p className="text-gray-500 mb-8 text-sm">Configure your business rates and information. These values power the AI quote engine.</p>
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Settings</h1>
+          <p className="text-gray-500 text-sm">Configure your business rates and information. These values power the AI quote engine.</p>
+        </div>
+        <Link href="/admin/settings/integrations"
+          className="flex items-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm px-4 py-2 rounded-lg font-medium transition shadow-sm">
+          <Zap className="w-4 h-4 text-blue-500" />
+          Integrations
+        </Link>
+      </div>
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* Business info */}
