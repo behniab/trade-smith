@@ -9,7 +9,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   urgent_multiplier: 1.25,
   emergency_multiplier: 1.75,
   service_area: 'United States',
-  business_name: 'Trade-Smith Plumbing',
+  business_name: 'Aloha Water Company, Inc.',
   business_phone: '',
   business_email: '',
   business_address: '',

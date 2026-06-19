@@ -12,7 +12,7 @@ async function getSettings() {
 
 export default async function HomePage() {
   const settings = await getSettings()
-  const businessName = settings?.business_name || 'Trade-Smith'
+  const businessName = settings?.business_name || 'Aloha Water Company, Inc.'
   const serviceArea = settings?.service_area || ''
   const phone = settings?.business_phone || ''
 

@@ -18,7 +18,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="px-6 py-5 border-b">
           <Link href="/" className="flex items-center gap-2 font-bold text-blue-600">
             <Wrench className="w-5 h-5" />
-            Trade-Smith
+            Aloha Water Company, Inc.
           </Link>
           <p className="text-xs text-gray-400 mt-0.5">Admin</p>
         </div>

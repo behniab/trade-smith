@@ -129,7 +129,7 @@ export default function SchedulePage({
     <div className="min-h-screen bg-gray-50">
       <nav className="border-b bg-white px-6 py-4 flex items-center gap-3">
         <Link href="/" className="flex items-center gap-2 font-bold text-blue-600">
-          <Wrench className="w-5 h-5" /> Trade-Smith
+          <Wrench className="w-5 h-5" /> Aloha Water Company, Inc.
         </Link>
         <span className="text-gray-400">/</span>
         <span className="text-gray-600 text-sm">Schedule Repair</span>

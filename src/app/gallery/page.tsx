@@ -47,7 +47,7 @@ export default async function GalleryPage() {
           <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
             <Wrench className="w-3.5 h-3.5 text-white" />
           </div>
-          <span>Trade<span className="text-blue-400">Smith</span></span>
+          <span>Aloha Water Company, Inc.</span>
         </Link>
         <Link href="/request-quote"
           className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-400 text-white text-sm px-4 py-2 rounded-lg font-medium transition">

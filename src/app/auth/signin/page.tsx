@@ -51,7 +51,7 @@ function SignInForm() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 font-bold text-xl text-blue-600 mb-6">
             <Wrench className="w-5 h-5" />
-            Trade-Smith
+            Aloha Water Company, Inc.
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Admin Sign In</h1>
           <p className="text-sm text-gray-500 mt-1">Sign in to access the admin panel</p>

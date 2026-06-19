@@ -239,7 +239,7 @@ export default function RequestQuotePage() {
           <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
             <Wrench className="w-3.5 h-3.5 text-white" />
           </div>
-          <span>Trade<span className="text-blue-400">Smith</span></span>
+          <span>Aloha Water Company, Inc.</span>
         </Link>
         <span className="text-white/20">/</span>
         <span className="text-gray-500 text-sm">Request a Quote</span>

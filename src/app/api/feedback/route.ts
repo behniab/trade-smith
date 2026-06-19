@@ -6,7 +6,7 @@ import { AppSettings } from '@/types'
 const DEFAULT_SETTINGS: AppSettings = {
   labor_rate_per_hour: 125, parts_markup_percent: 20,
   urgent_multiplier: 1.25, emergency_multiplier: 1.75,
-  service_area: 'United States', business_name: 'Trade-Smith Plumbing',
+  service_area: 'United States', business_name: 'Aloha Water Company, Inc.',
   business_phone: '', business_email: '', business_address: '',
   license_number: null, stripe_enabled: false,
 }
