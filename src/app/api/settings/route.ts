@@ -12,6 +12,9 @@ export async function GET() {
     ...data,
     anthropic_api_key: data.anthropic_api_key ? MASK : '',
     workwave_api_key: data.workwave_api_key ? MASK : '',
+    qb_client_secret: data.qb_client_secret ? MASK : '',
+    qb_access_token: data.qb_access_token ? MASK : '',
+    qb_refresh_token: data.qb_refresh_token ? MASK : '',
   }
   return NextResponse.json({ settings: masked })
 }
@@ -21,10 +24,11 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
 
   // If the submitted key is the mask or empty, don't touch the stored key
-  const { anthropic_api_key, workwave_api_key, ...rest } = body
+  const { anthropic_api_key, workwave_api_key, qb_client_secret, qb_access_token, qb_refresh_token, ...rest } = body
   const update: Record<string, unknown> = { id: 1, ...rest }
   if (anthropic_api_key && anthropic_api_key !== MASK) update.anthropic_api_key = anthropic_api_key
   if (workwave_api_key && workwave_api_key !== MASK) update.workwave_api_key = workwave_api_key
+  if (qb_client_secret && qb_client_secret !== MASK) update.qb_client_secret = qb_client_secret
 
   const { error } = await supabase.from('settings').upsert(update)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
