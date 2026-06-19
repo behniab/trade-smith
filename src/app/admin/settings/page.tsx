@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Loader2, Save, KeyRound, CheckCircle2, XCircle } from 'lucide-react'
 import { AppSettings } from '@/types'
+import AddressInput from '@/components/AddressInput'
 
 const MASK = '••••••••••••••••'
 
@@ -105,7 +106,14 @@ export default function SettingsPage() {
           <Field label="Business Name" value={settings.business_name} onChange={v => set('business_name', v)} />
           <Field label="Phone" value={settings.business_phone} onChange={v => set('business_phone', v)} />
           <Field label="Email" value={settings.business_email} onChange={v => set('business_email', v)} />
-          <Field label="Address" value={settings.business_address} onChange={v => set('business_address', v)} />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+            <AddressInput
+              value={settings.business_address}
+              onChange={v => set('business_address', v)}
+              onCityStateChange={v => set('service_area', v)}
+            />
+          </div>
           <Field label="Service Area (city/state)" value={settings.service_area} onChange={v => set('service_area', v)} placeholder="e.g. Phoenix, AZ" />
           <Field label="License Number" value={settings.license_number || ''} onChange={v => set('license_number', v || null)} required={false} />
         </section>
