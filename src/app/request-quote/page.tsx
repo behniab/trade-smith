@@ -167,7 +167,7 @@ export default function RequestQuotePage() {
 
   async function handleGetEstimate(e: React.FormEvent) {
     e.preventDefault()
-    if (!description.trim()) { setError('Please describe your job.'); return }
+    if (!description.trim() && !jobType) { setError('Please select a job type or describe your job.'); return }
     await submitEstimateRequest()
   }
 

@@ -26,8 +26,9 @@ export async function POST(req: NextRequest) {
     const answersRaw = formData.get('answers') as string | null
     const answers: QuoteAnswer[] = answersRaw ? JSON.parse(answersRaw) : []
 
-    if (!description?.trim()) {
-      return NextResponse.json({ error: 'Description is required' }, { status: 400 })
+    const effectiveDescription = description?.trim() || job_type || 'Standard service call'
+    if (!effectiveDescription) {
+      return NextResponse.json({ error: 'Please select a job type or describe your job.' }, { status: 400 })
     }
 
     const supabase = createAdminClient()
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
       learnings = (feedbackRows ?? []).map((r: { ai_learning_summary: string }) => r.ai_learning_summary).filter(Boolean)
     } catch {}
 
-    const result = await generateQuote({ description, job_type, urgency, media_urls: [], settings, answers, learnings })
+    const result = await generateQuote({ description: effectiveDescription, job_type, urgency, media_urls: [], settings, answers, learnings })
 
     if (result.type === 'questions') {
       return NextResponse.json({ questions: result.questions })
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
     // Generate parts list — admin-only, not shown to customer
     let parts_list = null
     try {
-      parts_list = await generatePartsList(result.estimate, description, job_type, settings)
+      parts_list = await generatePartsList(result.estimate, effectiveDescription, job_type, settings)
     } catch (partsErr) {
       console.error('generatePartsList failed:', partsErr)
     }
