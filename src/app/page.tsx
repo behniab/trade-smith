@@ -1,77 +1,204 @@
 import Link from 'next/link'
-import { Wrench, Clock, Star, Shield, Settings } from 'lucide-react'
+import { Wrench, Clock, Star, Shield, Settings, ArrowRight, CheckCircle, Zap, Phone } from 'lucide-react'
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gray-950 text-white overflow-x-hidden">
+
       {/* Nav */}
-      <nav className="border-b bg-white px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 font-bold text-xl text-blue-600">
-          <Wrench className="w-5 h-5" />
-          Trade-Smith
+      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between backdrop-blur-md bg-gray-950/80 border-b border-white/5">
+        <div className="flex items-center gap-2.5 font-bold text-xl">
+          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+            <Wrench className="w-4 h-4 text-white" />
+          </div>
+          <span className="text-white">Trade<span className="text-blue-400">Smith</span></span>
         </div>
-        <div className="flex items-center gap-4">
-          <Link href="/auth/signin" className="text-gray-400 hover:text-gray-600 transition" title="Admin">
-            <Settings className="w-5 h-5" />
+        <div className="flex items-center gap-6">
+          <Link href="/gallery" className="text-sm text-gray-400 hover:text-white transition">Gallery</Link>
+          <Link href="/auth/signin" className="text-gray-500 hover:text-gray-300 transition" title="Admin">
+            <Settings className="w-4 h-4" />
           </Link>
-          <Link href="/gallery" className="text-sm text-gray-600 hover:text-gray-900">Gallery</Link>
-          <Link href="/request-quote" className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700">
+          <Link
+            href="/request-quote"
+            className="bg-blue-500 hover:bg-blue-400 text-white text-sm px-5 py-2 rounded-lg font-medium transition"
+          >
             Get a Quote
           </Link>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="flex-1 bg-gradient-to-br from-blue-50 to-white px-6 py-24 text-center">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
-            Professional Plumbing,<br />
-            <span className="text-blue-600">Instant Estimates</span>
+      <section className="relative pt-32 pb-32 px-6 flex items-center justify-center overflow-hidden min-h-screen">
+        {/* Radial glow background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]" />
+          <div className="absolute top-1/2 left-1/4 w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-[100px]" />
+          <div className="absolute bottom-0 right-1/4 w-[500px] h-[300px] bg-blue-800/15 rounded-full blur-[100px]" />
+        </div>
+
+        {/* Grid overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+          }}
+        />
+
+        <div className="relative z-10 max-w-5xl mx-auto text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm px-4 py-1.5 rounded-full mb-8 font-medium">
+            <Zap className="w-3.5 h-3.5" />
+            AI-Powered Instant Estimates
+          </div>
+
+          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold leading-[1.05] tracking-tight mb-8">
+            Plumbing done
+            <br />
+            <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent">
+              right, priced
+            </span>
+            <br />
+            upfront.
           </h1>
-          <p className="text-xl text-gray-600 mb-10 max-w-xl mx-auto">
-            Describe your job, upload photos, and get an instant cost estimate in seconds. No waiting, no guessing.
+
+          <p className="text-xl text-gray-400 mb-12 max-w-xl mx-auto leading-relaxed">
+            Describe your job, get a detailed line-item estimate in seconds — no phone tag, no surprises.
           </p>
+
           <div className="flex gap-4 justify-center flex-wrap">
-            <Link href="/request-quote" className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition">
+            <Link
+              href="/request-quote"
+              className="group flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white px-8 py-4 rounded-xl text-lg font-semibold transition shadow-lg shadow-blue-500/25"
+            >
               Get an Instant Quote
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
-            <Link href="/gallery" className="border border-gray-300 text-gray-700 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-50 transition">
+            <Link
+              href="/gallery"
+              className="flex items-center gap-2 border border-white/10 text-gray-300 hover:text-white hover:border-white/20 px-8 py-4 rounded-xl text-lg font-semibold transition"
+            >
               View Our Work
             </Link>
+          </div>
+
+          {/* Trust signals */}
+          <div className="flex flex-wrap items-center justify-center gap-6 mt-14 text-sm text-gray-500">
+            {['Licensed & Insured', 'No hidden fees', 'Same-day response'].map(t => (
+              <span key={t} className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-blue-400" />
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Floating quote card mock */}
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 hidden xl:block pointer-events-none select-none">
+          <div className="w-72 bg-gray-900 border border-white/10 rounded-2xl p-5 shadow-2xl">
+            <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">Instant Estimate</p>
+            <p className="text-sm text-gray-300 mb-4">Leaking faucet under kitchen sink</p>
+            <div className="space-y-2 mb-4">
+              {[
+                { label: 'Labor (1.5 hrs)', cost: '$187' },
+                { label: 'Parts & Materials', cost: '$43' },
+              ].map(row => (
+                <div key={row.label} className="flex justify-between text-sm">
+                  <span className="text-gray-500">{row.label}</span>
+                  <span className="text-gray-200">{row.cost}</span>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-white/10 pt-3 flex justify-between">
+              <span className="text-sm font-semibold text-white">Total Estimate</span>
+              <span className="text-blue-400 font-bold">$230</span>
+            </div>
+            <div className="mt-3 w-full bg-blue-500/20 text-blue-300 text-xs text-center py-1.5 rounded-lg font-medium">
+              ✓ Generated in 3 seconds
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="bg-white px-6 py-20">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {[
-            { icon: Clock, title: 'Instant Estimates', desc: 'Fast quotes based on your description and photos' },
-            { icon: Wrench, title: 'All Plumbing Jobs', desc: 'From leaky faucets to full remodels and emergency repairs' },
-            { icon: Star, title: 'Quality Guaranteed', desc: 'Licensed, insured professionals with a satisfaction guarantee' },
-            { icon: Shield, title: 'Transparent Pricing', desc: 'Clear line-item estimates before any work begins' },
-          ].map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="text-center">
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Icon className="w-6 h-6 text-blue-600" />
+      {/* Features strip */}
+      <section className="border-y border-white/5 bg-gray-900/50 px-6 py-20">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-center text-xs uppercase tracking-widest text-gray-600 font-semibold mb-14">Why homeowners choose us</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { icon: Zap, title: 'Instant Estimates', desc: 'AI-powered quotes in seconds, not days', color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+              { icon: Wrench, title: 'All Plumbing Jobs', desc: 'Faucets, water heaters, full remodels, emergencies', color: 'text-blue-400', bg: 'bg-blue-400/10' },
+              { icon: Star, title: 'Quality Guaranteed', desc: 'Licensed, insured pros with a satisfaction promise', color: 'text-purple-400', bg: 'bg-purple-400/10' },
+              { icon: Shield, title: 'Transparent Pricing', desc: 'Line-item breakdowns before any work begins', color: 'text-green-400', bg: 'bg-green-400/10' },
+            ].map(({ icon: Icon, title, desc, color, bg }) => (
+              <div key={title} className="group">
+                <div className={`w-11 h-11 ${bg} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                  <Icon className={`w-5 h-5 ${color}`} />
+                </div>
+                <h3 className="font-semibold text-white mb-2">{title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
-              <p className="text-sm text-gray-500">{desc}</p>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="px-6 py-24">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">How it works</h2>
+            <p className="text-gray-500">Three steps to a professional estimate</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {/* Connector line */}
+            <div className="hidden md:block absolute top-8 left-1/3 right-1/3 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
+            {[
+              { step: '01', title: 'Describe your job', desc: 'Tell us what needs fixing — add photos if you have them.' },
+              { step: '02', title: 'Get your estimate', desc: 'Our AI generates a detailed, line-item cost breakdown instantly.' },
+              { step: '03', title: 'Book the job', desc: 'Confirm the quote and we\'ll schedule a time that works for you.' },
+            ].map(({ step, title, desc }) => (
+              <div key={step} className="relative text-center">
+                <div className="w-16 h-16 rounded-2xl bg-gray-900 border border-white/10 flex items-center justify-center mx-auto mb-5">
+                  <span className="text-blue-400 font-bold text-lg font-mono">{step}</span>
+                </div>
+                <h3 className="font-semibold text-white mb-2">{title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="bg-blue-600 px-6 py-16 text-center text-white">
-        <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
-        <p className="text-blue-100 mb-8">Describe your job and get a quote in under a minute.</p>
-        <Link href="/request-quote" className="bg-white text-blue-600 font-semibold px-8 py-4 rounded-xl hover:bg-blue-50 transition">
-          Request a Quote Now
-        </Link>
+      <section className="relative px-6 py-24 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/30 via-blue-800/20 to-gray-950" />
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-blue-500/20 rounded-full blur-[80px]" />
+        </div>
+        <div className="relative z-10 max-w-2xl mx-auto text-center">
+          <h2 className="text-4xl font-bold text-white mb-4">Ready to get started?</h2>
+          <p className="text-gray-400 mb-10 text-lg">Get a detailed estimate in under a minute. No signup required.</p>
+          <div className="flex gap-4 justify-center flex-wrap">
+            <Link
+              href="/request-quote"
+              className="group flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white px-8 py-4 rounded-xl text-lg font-semibold transition shadow-lg shadow-blue-500/25"
+            >
+              Request a Quote
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+            <a
+              href="tel:+18005551234"
+              className="flex items-center gap-2 border border-white/10 text-gray-300 hover:text-white hover:border-white/20 px-8 py-4 rounded-xl text-lg font-semibold transition"
+            >
+              <Phone className="w-5 h-5" />
+              Call Us
+            </a>
+          </div>
+        </div>
       </section>
 
-      <footer className="border-t px-6 py-6 text-center text-sm text-gray-500">
+      <footer className="border-t border-white/5 px-6 py-6 text-center text-sm text-gray-600">
         © {new Date().getFullYear()} Trade-Smith. All rights reserved.
       </footer>
     </div>
